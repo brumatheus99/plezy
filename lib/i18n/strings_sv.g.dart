@@ -460,6 +460,9 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
 	@override String get sleepTimerCompleted => 'Sovtimer slutförd - uppspelning pausad';
+	@override String get stillWatching => 'Tittar du fortfarande?';
+	@override String pausingIn({required Object seconds}) => 'Pausar om ${seconds}s';
+	@override String get continueWatching => 'Fortsätt';
 	@override String get autoPlayNext => 'Spela nästa automatiskt';
 	@override String get playNext => 'Spela nästa';
 	@override String get playButton => 'Spela';
@@ -794,29 +797,17 @@ class _TranslationsLiveTvSv implements TranslationsLiveTvEn {
 	@override String get title => 'Live-TV';
 	@override String get channels => 'Kanaler';
 	@override String get guide => 'Programguide';
-	@override String get recordings => 'Inspelningar';
-	@override String get subscriptions => 'Inspelningsregler';
-	@override String get scheduled => 'Schemalagda';
 	@override String get noChannels => 'Inga kanaler tillgängliga';
 	@override String get noDvr => 'Ingen DVR konfigurerad på någon server';
 	@override String get tuneFailed => 'Kunde inte ställa in kanalen';
 	@override String get loading => 'Laddar kanaler...';
 	@override String get nowPlaying => 'Spelas nu';
-	@override String get record => 'Spela in';
-	@override String get recordSeries => 'Spela in serie';
-	@override String get cancelRecording => 'Avbryt inspelning';
-	@override String get deleteSubscription => 'Ta bort inspelningsregel';
-	@override String get deleteSubscriptionConfirm => 'Är du säker på att du vill ta bort denna inspelningsregel?';
-	@override String get subscriptionDeleted => 'Inspelningsregel borttagen';
 	@override String get noPrograms => 'Ingen programdata tillgänglig';
-	@override String get noRecordings => 'Inga inspelningar schemalagda';
-	@override String get noSubscriptions => 'Inga inspelningsregler';
 	@override String channelNumber({required Object number}) => 'Kanal ${number}';
 	@override String get live => 'LIVE';
 	@override String get hd => 'HD';
 	@override String get premiere => 'NY';
 	@override String get reloadGuide => 'Ladda om programguide';
-	@override String get guideReloaded => 'Programdata omladdad';
 	@override String get allChannels => 'Alla kanaler';
 	@override String get now => 'Nu';
 	@override String get today => 'Idag';
@@ -1580,6 +1571,9 @@ extension on TranslationsSv {
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Uppspelningen pausas om ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Sovtimer slutförd - uppspelning pausad',
+			'videoControls.stillWatching' => 'Tittar du fortfarande?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
+			'videoControls.continueWatching' => 'Fortsätt',
 			'videoControls.autoPlayNext' => 'Spela nästa automatiskt',
 			'videoControls.playNext' => 'Spela nästa',
 			'videoControls.playButton' => 'Spela',
@@ -1791,32 +1785,18 @@ extension on TranslationsSv {
 			'liveTv.title' => 'Live-TV',
 			'liveTv.channels' => 'Kanaler',
 			'liveTv.guide' => 'Programguide',
-			'liveTv.recordings' => 'Inspelningar',
-			'liveTv.subscriptions' => 'Inspelningsregler',
-			'liveTv.scheduled' => 'Schemalagda',
 			'liveTv.noChannels' => 'Inga kanaler tillgängliga',
 			'liveTv.noDvr' => 'Ingen DVR konfigurerad på någon server',
 			'liveTv.tuneFailed' => 'Kunde inte ställa in kanalen',
 			'liveTv.loading' => 'Laddar kanaler...',
 			'liveTv.nowPlaying' => 'Spelas nu',
-			'liveTv.record' => 'Spela in',
-			'liveTv.recordSeries' => 'Spela in serie',
-			'liveTv.cancelRecording' => 'Avbryt inspelning',
-			'liveTv.deleteSubscription' => 'Ta bort inspelningsregel',
-			'liveTv.deleteSubscriptionConfirm' => 'Är du säker på att du vill ta bort denna inspelningsregel?',
-			'liveTv.subscriptionDeleted' => 'Inspelningsregel borttagen',
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
-			'liveTv.noRecordings' => 'Inga inspelningar schemalagda',
-			'liveTv.noSubscriptions' => 'Inga inspelningsregler',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
-			'liveTv.guideReloaded' => 'Programdata omladdad',
 			'liveTv.allChannels' => 'Alla kanaler',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Idag',
 			'liveTv.midnight' => 'Midnatt',
@@ -1826,6 +1806,8 @@ extension on TranslationsSv {
 			'liveTv.evening' => 'Kväll',
 			'liveTv.lateNight' => 'Sen kväll',
 			'liveTv.whatsOn' => 'På TV nu',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',

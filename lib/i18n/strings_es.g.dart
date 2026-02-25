@@ -460,6 +460,9 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Temporizador Activo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La reproducción se pausará en ${duration}';
 	@override String get sleepTimerCompleted => 'Temporizador completado - reproducción pausada';
+	@override String get stillWatching => '¿Sigues viendo?';
+	@override String pausingIn({required Object seconds}) => 'Pausa en ${seconds}s';
+	@override String get continueWatching => 'Continuar';
 	@override String get autoPlayNext => 'Reproducir siguiente automáticamente';
 	@override String get playNext => 'Reproducir siguiente';
 	@override String get playButton => 'Reproducir';
@@ -794,29 +797,17 @@ class _TranslationsLiveTvEs implements TranslationsLiveTvEn {
 	@override String get title => 'TV en vivo';
 	@override String get channels => 'Canales';
 	@override String get guide => 'Guía';
-	@override String get recordings => 'Grabaciones';
-	@override String get subscriptions => 'Reglas de grabación';
-	@override String get scheduled => 'Programadas';
 	@override String get noChannels => 'No hay canales disponibles';
 	@override String get noDvr => 'No hay DVR configurado en ningún servidor';
 	@override String get tuneFailed => 'Error al sintonizar el canal';
 	@override String get loading => 'Cargando canales...';
 	@override String get nowPlaying => 'Reproduciendo ahora';
-	@override String get record => 'Grabar';
-	@override String get recordSeries => 'Grabar serie';
-	@override String get cancelRecording => 'Cancelar grabación';
-	@override String get deleteSubscription => 'Eliminar regla de grabación';
-	@override String get deleteSubscriptionConfirm => '¿Estás seguro de que quieres eliminar esta regla de grabación?';
-	@override String get subscriptionDeleted => 'Regla de grabación eliminada';
 	@override String get noPrograms => 'No hay datos de programación disponibles';
-	@override String get noRecordings => 'No hay grabaciones programadas';
-	@override String get noSubscriptions => 'No hay reglas de grabación';
 	@override String channelNumber({required Object number}) => 'Canal ${number}';
 	@override String get live => 'EN VIVO';
 	@override String get hd => 'HD';
 	@override String get premiere => 'NUEVO';
 	@override String get reloadGuide => 'Recargar guía';
-	@override String get guideReloaded => 'Datos de la guía recargados';
 	@override String get allChannels => 'Todos los canales';
 	@override String get now => 'Ahora';
 	@override String get today => 'Hoy';
@@ -1580,6 +1571,9 @@ extension on TranslationsEs {
 			'videoControls.timerActive' => 'Temporizador Activo',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La reproducción se pausará en ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Temporizador completado - reproducción pausada',
+			'videoControls.stillWatching' => '¿Sigues viendo?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausa en ${seconds}s',
+			'videoControls.continueWatching' => 'Continuar',
 			'videoControls.autoPlayNext' => 'Reproducir siguiente automáticamente',
 			'videoControls.playNext' => 'Reproducir siguiente',
 			'videoControls.playButton' => 'Reproducir',
@@ -1791,32 +1785,18 @@ extension on TranslationsEs {
 			'liveTv.title' => 'TV en vivo',
 			'liveTv.channels' => 'Canales',
 			'liveTv.guide' => 'Guía',
-			'liveTv.recordings' => 'Grabaciones',
-			'liveTv.subscriptions' => 'Reglas de grabación',
-			'liveTv.scheduled' => 'Programadas',
 			'liveTv.noChannels' => 'No hay canales disponibles',
 			'liveTv.noDvr' => 'No hay DVR configurado en ningún servidor',
 			'liveTv.tuneFailed' => 'Error al sintonizar el canal',
 			'liveTv.loading' => 'Cargando canales...',
 			'liveTv.nowPlaying' => 'Reproduciendo ahora',
-			'liveTv.record' => 'Grabar',
-			'liveTv.recordSeries' => 'Grabar serie',
-			'liveTv.cancelRecording' => 'Cancelar grabación',
-			'liveTv.deleteSubscription' => 'Eliminar regla de grabación',
-			'liveTv.deleteSubscriptionConfirm' => '¿Estás seguro de que quieres eliminar esta regla de grabación?',
-			'liveTv.subscriptionDeleted' => 'Regla de grabación eliminada',
 			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
-			'liveTv.noRecordings' => 'No hay grabaciones programadas',
-			'liveTv.noSubscriptions' => 'No hay reglas de grabación',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
 			'liveTv.live' => 'EN VIVO',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NUEVO',
 			'liveTv.reloadGuide' => 'Recargar guía',
-			'liveTv.guideReloaded' => 'Datos de la guía recargados',
 			'liveTv.allChannels' => 'Todos los canales',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Ahora',
 			'liveTv.today' => 'Hoy',
 			'liveTv.midnight' => 'Medianoche',
@@ -1826,6 +1806,8 @@ extension on TranslationsEs {
 			'liveTv.evening' => 'Noche',
 			'liveTv.lateNight' => 'Trasnoche',
 			'liveTv.whatsOn' => 'En emisión',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Ver canal',
 			'collections.title' => 'Colecciones',
 			'collections.collection' => 'Colección',

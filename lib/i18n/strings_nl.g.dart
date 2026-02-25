@@ -460,6 +460,9 @@ class _TranslationsVideoControlsNl implements TranslationsVideoControlsEn {
 	@override String get timerActive => 'Timer actief';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
 	@override String get sleepTimerCompleted => 'Slaaptimer voltooid - afspelen gepauzeerd';
+	@override String get stillWatching => 'Kijk je nog?';
+	@override String pausingIn({required Object seconds}) => 'Pauze over ${seconds}s';
+	@override String get continueWatching => 'Doorgaan';
 	@override String get autoPlayNext => 'Automatisch volgende afspelen';
 	@override String get playNext => 'Volgende afspelen';
 	@override String get playButton => 'Afspelen';
@@ -794,29 +797,17 @@ class _TranslationsLiveTvNl implements TranslationsLiveTvEn {
 	@override String get title => 'Live TV';
 	@override String get channels => 'Zenders';
 	@override String get guide => 'Gids';
-	@override String get recordings => 'Opnames';
-	@override String get subscriptions => 'Opnameregels';
-	@override String get scheduled => 'Gepland';
 	@override String get noChannels => 'Geen zenders beschikbaar';
 	@override String get noDvr => 'Geen DVR geconfigureerd op een server';
 	@override String get tuneFailed => 'Kan zender niet afstemmen';
 	@override String get loading => 'Zenders laden...';
 	@override String get nowPlaying => 'Nu aan het afspelen';
-	@override String get record => 'Opnemen';
-	@override String get recordSeries => 'Serie opnemen';
-	@override String get cancelRecording => 'Opname annuleren';
-	@override String get deleteSubscription => 'Opnameregel verwijderen';
-	@override String get deleteSubscriptionConfirm => 'Weet je zeker dat je deze opnameregel wilt verwijderen?';
-	@override String get subscriptionDeleted => 'Opnameregel verwijderd';
 	@override String get noPrograms => 'Geen programmagegevens beschikbaar';
-	@override String get noRecordings => 'Geen opnames gepland';
-	@override String get noSubscriptions => 'Geen opnameregels';
 	@override String channelNumber({required Object number}) => 'Kanaal ${number}';
 	@override String get live => 'LIVE';
 	@override String get hd => 'HD';
 	@override String get premiere => 'NIEUW';
 	@override String get reloadGuide => 'Gids herladen';
-	@override String get guideReloaded => 'Gidsgegevens herladen';
 	@override String get allChannels => 'Alle zenders';
 	@override String get now => 'Nu';
 	@override String get today => 'Vandaag';
@@ -1580,6 +1571,9 @@ extension on TranslationsNl {
 			'videoControls.timerActive' => 'Timer actief',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}',
 			'videoControls.sleepTimerCompleted' => 'Slaaptimer voltooid - afspelen gepauzeerd',
+			'videoControls.stillWatching' => 'Kijk je nog?',
+			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauze over ${seconds}s',
+			'videoControls.continueWatching' => 'Doorgaan',
 			'videoControls.autoPlayNext' => 'Automatisch volgende afspelen',
 			'videoControls.playNext' => 'Volgende afspelen',
 			'videoControls.playButton' => 'Afspelen',
@@ -1791,32 +1785,18 @@ extension on TranslationsNl {
 			'liveTv.title' => 'Live TV',
 			'liveTv.channels' => 'Zenders',
 			'liveTv.guide' => 'Gids',
-			'liveTv.recordings' => 'Opnames',
-			'liveTv.subscriptions' => 'Opnameregels',
-			'liveTv.scheduled' => 'Gepland',
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
 			'liveTv.tuneFailed' => 'Kan zender niet afstemmen',
 			'liveTv.loading' => 'Zenders laden...',
 			'liveTv.nowPlaying' => 'Nu aan het afspelen',
-			'liveTv.record' => 'Opnemen',
-			'liveTv.recordSeries' => 'Serie opnemen',
-			'liveTv.cancelRecording' => 'Opname annuleren',
-			'liveTv.deleteSubscription' => 'Opnameregel verwijderen',
-			'liveTv.deleteSubscriptionConfirm' => 'Weet je zeker dat je deze opnameregel wilt verwijderen?',
-			'liveTv.subscriptionDeleted' => 'Opnameregel verwijderd',
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
-			'liveTv.noRecordings' => 'Geen opnames gepland',
-			'liveTv.noSubscriptions' => 'Geen opnameregels',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NIEUW',
 			'liveTv.reloadGuide' => 'Gids herladen',
-			'liveTv.guideReloaded' => 'Gidsgegevens herladen',
 			'liveTv.allChannels' => 'Alle zenders',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
 			'liveTv.midnight' => 'Middernacht',
@@ -1826,6 +1806,8 @@ extension on TranslationsNl {
 			'liveTv.evening' => 'Avond',
 			'liveTv.lateNight' => 'Late avond',
 			'liveTv.whatsOn' => 'Nu op TV',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Kanaal bekijken',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Beheren',
