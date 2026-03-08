@@ -18,6 +18,7 @@ class FocusableMediaCard extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
   final bool forceGridMode;
+  final bool forceListMode;
   final bool isInContinueWatching;
   final String? collectionId;
 
@@ -26,6 +27,12 @@ class FocusableMediaCard extends StatefulWidget {
 
   /// True when in a hub with mixed content (movies + episodes)
   final bool mixedHubContext;
+
+  /// Show server name in list view (multi-server)
+  final bool showServerName;
+
+  /// Whether to disable the scale animation on focus (e.g. in list view).
+  final bool disableScale;
 
   /// Optional external focus node for programmatic focus control.
   /// If not provided, an internal focus node is created.
@@ -60,10 +67,13 @@ class FocusableMediaCard extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
     this.forceGridMode = false,
+    this.forceListMode = false,
     this.isInContinueWatching = false,
     this.collectionId,
     this.isOffline = false,
     this.mixedHubContext = false,
+    this.showServerName = false,
+    this.disableScale = false,
     this.focusNode,
     this.onNavigateUp,
     this.onNavigateLeft,
@@ -92,6 +102,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       onBack: widget.onBack,
       onFocusChange: widget.onFocusChange,
       enableLongPress: true,
+      disableScale: widget.disableScale,
       useComfortableZone: !PlatformDetector.isTV(), // Always center on TV
       scrollAlignment: 0.5,
       child: MediaCard(
@@ -103,10 +114,12 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
         onListRefresh: widget.onListRefresh,
         forceGridMode: widget.forceGridMode,
+        forceListMode: widget.forceListMode,
         isInContinueWatching: widget.isInContinueWatching,
         collectionId: widget.collectionId,
         isOffline: widget.isOffline,
         mixedHubContext: widget.mixedHubContext,
+        showServerName: widget.showServerName,
       ),
     );
   }

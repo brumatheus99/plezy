@@ -45,9 +45,11 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   role: (json['Role'] as List<dynamic>?)?.map((e) => PlexRole.fromJson(e as Map<String, dynamic>)).toList(),
   audioLanguage: json['audioLanguage'] as String?,
   subtitleLanguage: json['subtitleLanguage'] as String?,
+  subtitleMode: (json['subtitleMode'] as num?)?.toInt(),
   playlistItemID: (json['playlistItemID'] as num?)?.toInt(),
   playQueueItemID: (json['playQueueItemID'] as num?)?.toInt(),
   librarySectionID: (json['librarySectionID'] as num?)?.toInt(),
+  librarySectionTitle: json['librarySectionTitle'] as String?,
   ratingImage: json['ratingImage'] as String?,
   audienceRatingImage: json['audienceRatingImage'] as String?,
   tagline: json['tagline'] as String?,
@@ -56,6 +58,7 @@ PlexMetadata _$PlexMetadataFromJson(Map<String, dynamic> json) => PlexMetadata(
   extraType: (json['extraType'] as num?)?.toInt(),
   primaryExtraKey: json['primaryExtraKey'] as String?,
   clearLogo: json['clearLogo'] as String?,
+  backgroundSquare: json['backgroundSquare'] as String?,
 );
 
 Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) => <String, dynamic>{
@@ -97,9 +100,11 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) => <String, dyn
   'Role': instance.role,
   'audioLanguage': instance.audioLanguage,
   'subtitleLanguage': instance.subtitleLanguage,
+  'subtitleMode': instance.subtitleMode,
   'playlistItemID': instance.playlistItemID,
   'playQueueItemID': instance.playQueueItemID,
   'librarySectionID': instance.librarySectionID,
+  'librarySectionTitle': instance.librarySectionTitle,
   'ratingImage': instance.ratingImage,
   'audienceRatingImage': instance.audienceRatingImage,
   'tagline': instance.tagline,
@@ -108,4 +113,5 @@ Map<String, dynamic> _$PlexMetadataToJson(PlexMetadata instance) => <String, dyn
   'extraType': instance.extraType,
   'primaryExtraKey': instance.primaryExtraKey,
   'clearLogo': instance.clearLogo,
+  'backgroundSquare': instance.backgroundSquare,
 };

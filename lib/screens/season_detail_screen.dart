@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,16 +9,18 @@ import 'package:provider/provider.dart';
 import '../../services/plex_client.dart';
 import '../main.dart';
 import '../focus/focusable_wrapper.dart';
-import '../utils/global_key_utils.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
+import '../providers/settings_provider.dart';
+import '../utils/content_utils.dart';
 import '../services/download_storage_service.dart';
+import '../widgets/collapsible_text.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
-import '../utils/provider_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/formatters.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -26,6 +29,8 @@ import '../widgets/placeholder_container.dart';
 import '../mixins/item_updatable.dart';
 import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
+import '../mixins/mounted_set_state_mixin.dart';
+import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
@@ -42,11 +47,17 @@ class SeasonDetailScreen extends StatefulWidget {
 }
 
 class _SeasonDetailScreenState extends State<SeasonDetailScreen>
-    with ItemUpdatable, WatchStateAware, DeletionAware, RouteAware {
+    with ItemUpdatable, WatchStateAware, DeletionAware, RouteAware, MountedSetStateMixin, ServerBoundMediaMixin {
   PlexClient? _client;
 
   @override
-  PlexClient get client => _client!;
+  PlexClient get client {
+    final client = _client;
+    if (client == null) {
+      throw StateError('PlexClient unavailable for season ${widget.season.ratingKey}');
+    }
+    return client;
+  }
 
   List<PlexMetadata> _episodes = [];
   bool _isLoadingEpisodes = false;
@@ -56,21 +67,25 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   bool _suppressNextBackKeyUp = false;
   bool _routeSubscribed = false;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) => buildGlobalKey(serverId ?? widget.season.serverId ?? '', ratingKey);
+  @override
+  PlexMetadata get serverBoundMetadata => widget.season;
+
+  @override
+  bool get isServerBoundOffline => widget.isOffline;
 
   // WatchStateAware: watch all episode ratingKeys
   @override
   Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
 
   @override
-  String? get watchStateServerId => widget.season.serverId;
+  String? get watchStateServerId => serverBoundServerId;
 
   @override
   Set<String>? get watchedGlobalKeys {
-    final serverId = widget.season.serverId;
+    final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    return _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+    return _episodes.map((e) => toServerBoundGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
   }
 
   @override
@@ -89,15 +104,15 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
   }
 
   @override
-  String? get deletionServerId => widget.season.serverId;
+  String? get deletionServerId => serverBoundServerId;
 
   @override
   Set<String>? get deletionGlobalKeys {
-    final serverId = widget.season.serverId;
+    final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = _episodes.map((e) => _toGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
-    keys.add(_toGlobalKey(widget.season.ratingKey, serverId: serverId));
+    final keys = _episodes.map((e) => toServerBoundGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
+    keys.add(toServerBoundGlobalKey(widget.season.ratingKey, serverId: serverId));
     return keys;
   }
 
@@ -119,14 +134,6 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     }
   }
 
-  /// Get the correct PlexClient for this season's server
-  PlexClient? _getClientForSeason(BuildContext context) {
-    if (widget.isOffline || widget.season.serverId == null) {
-      return null;
-    }
-    return context.getClientForServer(widget.season.serverId!);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -134,7 +141,7 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Capture keyboard mode once to avoid rebuild dependency when mode changes
       _initialKeyboardMode = InputModeTracker.isKeyboardMode(context);
-      _client = _getClientForSeason(context);
+      _client = getServerBoundClient(context);
       _loadEpisodes();
     });
   }
@@ -151,17 +158,23 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
     }
 
     try {
-      // Episodes are automatically tagged with server info by PlexClient
-      final episodes = await _client!.getChildren(widget.season.ratingKey);
+      final client = _client;
+      if (client == null) {
+        setStateIfMounted(() {
+          _isLoadingEpisodes = false;
+        });
+        return;
+      }
 
-      if (!mounted) return;
-      setState(() {
+      // Episodes are automatically tagged with server info by PlexClient
+      final episodes = await client.getChildren(widget.season.ratingKey);
+
+      setStateIfMounted(() {
         _episodes = episodes;
         _isLoadingEpisodes = false;
       });
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
+      setStateIfMounted(() {
         _isLoadingEpisodes = false;
       });
     }
@@ -186,6 +199,9 @@ class _SeasonDetailScreenState extends State<SeasonDetailScreen>
 
   @override
   Future<void> updateItem(String ratingKey) async {
+    if (_client == null) {
+      return;
+    }
     _watchStateChanged = true;
     await super.updateItem(ratingKey);
   }
@@ -361,14 +377,18 @@ class _EpisodeCardState extends State<_EpisodeCard> {
     );
     return Row(
       children: [
-        if (widget.episode.duration != null) Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
+        if (widget.episode.duration != null)
+          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
         if (widget.episode.originallyAvailableAt != null) ...[
           dot,
           Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
         ],
         if (widget.episode.userRating != null && widget.episode.userRating! > 0) ...[
           dot,
-          Padding(padding: const EdgeInsets.only(top: 2), child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber)),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
+          ),
           const SizedBox(width: 2),
           Text(
             (widget.episode.userRating! / 2) == (widget.episode.userRating! / 2).truncateToDouble()
@@ -383,6 +403,9 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final shouldBlur = hideSpoilers && widget.episode.shouldHideSpoiler;
+
     // Hide progress when offline (not tracked)
     final hasProgress =
         !widget.isOffline &&
@@ -430,7 +453,17 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                     children: [
                       ClipRRect(
                         borderRadius: const BorderRadius.all(Radius.circular(6)),
-                        child: AspectRatio(aspectRatio: 16 / 9, child: _buildEpisodeThumbnail()),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: shouldBlur
+                              ? ClipRect(
+                                  child: ImageFiltered(
+                                    imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                                    child: _buildEpisodeThumbnail(),
+                                  ),
+                                )
+                              : _buildEpisodeThumbnail(),
+                        ),
                       ),
 
                       // Play overlay
@@ -550,14 +583,16 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                                       value: 1.0,
                                       strokeWidth: 1.5,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        getMutedColor(Colors.blue).withValues(alpha: 0.3),
+                                        getMutedColor(Theme.of(context).colorScheme.primary).withValues(alpha: 0.3),
                                       ),
                                     ),
                                     // Progress circle
                                     CircularProgressIndicator(
                                       value: progress?.progressPercent,
                                       strokeWidth: 1.5,
-                                      valueColor: AlwaysStoppedAnimation<Color>(getMutedColor(Colors.blue)),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        getMutedColor(Theme.of(context).colorScheme.primary),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -634,17 +669,27 @@ class _EpisodeCardState extends State<_EpisodeCard> {
                         },
                       ),
 
-                      // Summary
-                      if (widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
+                      // Summary (hidden when spoiler protection is active)
+                      if (!shouldBlur && widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          widget.episode.summary!,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        if (PlatformDetector.isTV())
+                          Text(
+                            widget.episode.summary!,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        else
+                          CollapsibleText(
+                            text: widget.episode.summary!,
+                            maxLines: 3,
+                            small: true,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
+                          ),
                       ],
 
                       // Metadata row (duration, watched status)

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/focusable_action_bar.dart';
 import '../../services/plex_client.dart';
 import '../../services/play_queue_launcher.dart';
 import '../../models/plex_playlist.dart';
@@ -51,33 +52,15 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   bool get hasItems => items.isNotEmpty;
 
   @override
-  int get appBarButtonCount {
-    int count = 0;
-    if (items.isNotEmpty) count += 2; // play + shuffle
-    if (!widget.playlist.smart) count += 1; // delete
-    return count;
-  }
-
-  @override
-  List<AppBarButtonConfig> getAppBarButtons() {
-    final buttons = <AppBarButtonConfig>[];
-    if (items.isNotEmpty) {
-      buttons.add(AppBarButtonConfig(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems));
-      buttons.add(
-        AppBarButtonConfig(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
-      );
-    }
-    if (!widget.playlist.smart) {
-      buttons.add(
-        AppBarButtonConfig(
-          icon: Symbols.delete_rounded,
-          tooltip: t.playlists.delete,
-          onPressed: _deletePlaylist,
-          color: Colors.red,
-        ),
-      );
-    }
-    return buttons;
+  List<FocusableAction> getAppBarActions() {
+    return [
+      if (items.isNotEmpty) ...[
+        FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
+        FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
+      ],
+      if (!widget.playlist.smart)
+        FocusableAction(icon: Symbols.delete_rounded, tooltip: t.playlists.delete, onPressed: _deletePlaylist, iconColor: Colors.red),
+    ];
   }
 
   // Focus management for regular (non-smart) reorderable lists
@@ -559,11 +542,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Colors.blue[300]),
+                    AppIcon(Symbols.auto_awesome_rounded, fill: 1, size: 12, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 4),
                     Text(
                       t.playlists.smartPlaylist,
-                      style: TextStyle(fontSize: 11, color: Colors.blue[300], fontWeight: FontWeight.normal),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.normal),
                     ),
                   ],
                 ),

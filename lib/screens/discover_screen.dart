@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../focus/focusable_action_bar.dart';
+import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -15,7 +17,6 @@ import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_hub.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/server_state_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import 'profile/user_avatar_widget.dart';
@@ -131,14 +132,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
-  late FocusNode _refreshButtonFocusNode;
-  late FocusNode _watchTogetherButtonFocusNode;
-  late FocusNode _companionRemoteButtonFocusNode;
-  late FocusNode _userButtonFocusNode;
-  bool _isRefreshFocused = false;
-  bool _isWatchTogetherFocused = false;
-  bool _isCompanionRemoteFocused = false;
-  bool _isUserFocused = false;
+  final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
   /// Get the correct PlexClient for an item's server
   PlexClient _getClientForItem(PlexMetadata? item) {
@@ -188,7 +182,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (_isHeroSectionVisible) {
       _heroFocusNode.requestFocus();
     } else {
-      _refreshButtonFocusNode.requestFocus();
+      _actionBarKey.currentState?.getFocusNode(0).requestFocus();
     }
     _scrollToTop();
   }
@@ -245,14 +239,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _heroFocusNode = FocusNode(debugLabel: 'hero_section');
-    _refreshButtonFocusNode = FocusNode(debugLabel: 'refresh_button');
-    _watchTogetherButtonFocusNode = FocusNode(debugLabel: 'watch_together_button');
-    _companionRemoteButtonFocusNode = FocusNode(debugLabel: 'companion_remote_button');
-    _userButtonFocusNode = FocusNode(debugLabel: 'user_button');
-    _refreshButtonFocusNode.addListener(_onRefreshFocusChange);
-    _watchTogetherButtonFocusNode.addListener(_onWatchTogetherFocusChange);
-    _companionRemoteButtonFocusNode.addListener(_onCompanionRemoteFocusChange);
-    _userButtonFocusNode.addListener(_onUserFocusChange);
     _loadContent();
     _startAutoScroll();
   }
@@ -272,45 +258,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _loadContent();
   }
 
-  void _onRefreshFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isRefreshFocused = _refreshButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
-  void _onWatchTogetherFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isWatchTogetherFocused = _watchTogetherButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
-  void _onCompanionRemoteFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isCompanionRemoteFocused = _companionRemoteButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
-  void _onUserFocusChange() {
-    if (mounted) {
-      setState(() {
-        _isUserFocused = _userButtonFocusNode.hasFocus;
-      });
-    }
-  }
-
   /// Handle key events for the hero section
   late final _handleHeroKeyEvent = dpadKeyHandler(
     onDown: () {
       final keys = _allHubKeys;
       if (keys.isNotEmpty) keys.first.currentState?.requestFocusFromMemory();
     },
-    onUp: () => _refreshButtonFocusNode.requestFocus(),
+    onUp: () => _actionBarKey.currentState?.getFocusNode(0).requestFocus(),
     onLeft: () {
       if (_currentHeroIndex > 0) {
         _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
@@ -330,45 +284,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     },
   );
 
-  /// Handle key events for the refresh button in app bar
-  late final _handleRefreshKeyEvent = dpadKeyHandler(
-    onDown: _focusContentFromAppBar,
-    onRight: () => _watchTogetherButtonFocusNode.requestFocus(),
-    onLeft: _navigateToSidebar,
-    onUp: () {}, // Block at boundary
-    onSelect: _loadContent,
-  );
-
-  /// Handle key events for the watch together button in app bar
-  late final _handleWatchTogetherKeyEvent = dpadKeyHandler(
-    onDown: _focusContentFromAppBar,
-    onLeft: () => _refreshButtonFocusNode.requestFocus(),
-    onRight: () => _companionRemoteButtonFocusNode.requestFocus(),
-    onUp: () {}, // Block at boundary
-    onSelect: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-  );
-
-  /// Handle key events for the companion remote button in app bar
-  late final _handleCompanionRemoteKeyEvent = dpadKeyHandler(
-    onDown: () => _heroFocusNode.requestFocus(),
-    onLeft: () => _watchTogetherButtonFocusNode.requestFocus(),
-    onRight: () => _userButtonFocusNode.requestFocus(),
-    onUp: () {}, // Block at boundary
-    onSelect: () => RemoteSessionDialog.show(context),
-  );
-
-  /// Handle key events for the user button in app bar
-  late final _handleUserKeyEvent = dpadKeyHandler(
-    onDown: _focusContentFromAppBar,
-    onLeft: () => _companionRemoteButtonFocusNode.requestFocus(),
-    onRight: () {}, // Block at boundary
-    onUp: () {}, // Block at boundary
-    onSelect: () {
-      final userProvider = context.read<UserProfileProvider>();
-      _showUserMenu(context, userProvider);
-    },
-  );
-
   @override
   void dispose() {
     _hiddenLibrariesProvider?.removeListener(_onHiddenLibrariesChanged);
@@ -379,24 +294,24 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _heroController.dispose();
     _scrollController.dispose();
     _heroFocusNode.dispose();
-    _refreshButtonFocusNode.removeListener(_onRefreshFocusChange);
-    _refreshButtonFocusNode.dispose();
-    _watchTogetherButtonFocusNode.removeListener(_onWatchTogetherFocusChange);
-    _watchTogetherButtonFocusNode.dispose();
-    _companionRemoteButtonFocusNode.removeListener(_onCompanionRemoteFocusChange);
-    _companionRemoteButtonFocusNode.dispose();
-    _userButtonFocusNode.removeListener(_onUserFocusChange);
-    _userButtonFocusNode.dispose();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Refresh continue watching when app resumes on mobile platforms
-    // Skip on desktop to avoid excessive refreshes from window focus changes
-    if (state == AppLifecycleState.resumed && (Platform.isIOS || Platform.isAndroid)) {
-      appLogger.d('App resumed on mobile - refreshing continue watching');
-      _refreshContinueWatching();
+    if (state == AppLifecycleState.resumed) {
+      // Restart auto-scroll when app becomes active again
+      if (!_isAutoScrollPaused) _startAutoScroll();
+      // Refresh continue watching on mobile only
+      // (on desktop, "resumed" fires on every window focus gain)
+      if (Platform.isIOS || Platform.isAndroid) {
+        _refreshContinueWatching();
+      }
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      // Stop animations to prevent scroll state corruption while backgrounded
+      _autoScrollTimer?.cancel();
+      _stopIndicatorProgress();
     }
   }
 
@@ -471,11 +386,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   @override
-  void onTabShown() {
+  void onTabShown({bool scrollToTop = true}) {
     if (!_isAutoScrollPaused) {
       _startAutoScroll();
     }
-    _focusTopBoundary();
+    if (scrollToTop) {
+      _focusTopBoundary();
+    }
   }
 
   // Helper method to calculate visible dot range (max 5 dots)
@@ -824,14 +741,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Use comprehensive logout through UserProfileProvider
       final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
       final multiServerProvider = context.read<MultiServerProvider>();
-      final serverStateProvider = context.read<ServerStateProvider>();
       final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
       final playbackStateProvider = context.read<PlaybackStateProvider>();
 
       // Clear all user data and provider states
       await userProfileProvider.logout();
       multiServerProvider.clearAllConnections();
-      serverStateProvider.reset();
       await hiddenLibrariesProvider.refresh();
       playbackStateProvider.clearShuffle();
 
@@ -849,7 +764,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Show user menu programmatically (for D-pad select)
   void _showUserMenu(BuildContext context, UserProfileProvider userProvider) {
-    final RenderBox? button = _userButtonFocusNode.context?.findRenderObject() as RenderBox?;
+    final actionBar = _actionBarKey.currentState;
+    if (actionBar == null) return;
+    final lastNode = actionBar.getFocusNode(actionBar.widget.actions.length - 1);
+    final RenderBox? button = lastNode.context?.findRenderObject() as RenderBox?;
     if (button == null) return;
 
     final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
@@ -869,12 +787,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           PopupMenuItem(
             value: 'switch_profile',
             child: Row(
-              children: [AppIcon(Symbols.people_rounded, fill: 1), SizedBox(width: 8), Text(t.discover.switchProfile)],
+              children: [
+                AppIcon(Symbols.people_rounded, fill: 1),
+                const SizedBox(width: 8),
+                Text(t.discover.switchProfile),
+              ],
             ),
           ),
         PopupMenuItem(
           value: 'logout',
-          child: Row(children: [AppIcon(Symbols.logout_rounded, fill: 1), SizedBox(width: 8), Text(t.common.logout)]),
+          child: Row(
+            children: [AppIcon(Symbols.logout_rounded, fill: 1), const SizedBox(width: 8), Text(t.common.logout)],
+          ),
         ),
       ],
     ).then((value) {
@@ -916,171 +840,149 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
-              Focus(
-                focusNode: _refreshButtonFocusNode,
-                onKeyEvent: _handleRefreshKeyEvent,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _isRefreshFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                    borderRadius: const BorderRadius.all(Radius.circular(20)),
-                  ),
-                  child: IconButton(
-                    icon: const AppIcon(Symbols.refresh_rounded, fill: 1, color: Colors.white),
-                    onPressed: _loadContent,
-                  ),
-                ),
-              ),
-              // Watch Together button
-              Consumer<WatchTogetherProvider>(
-                builder: (context, watchTogether, child) {
-                  return Focus(
-                    focusNode: _watchTogetherButtonFocusNode,
-                    onKeyEvent: _handleWatchTogetherKeyEvent,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: _isWatchTogetherFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: Stack(
-                        children: [
-                          IconButton(
-                            icon: AppIcon(
-                              Symbols.group_rounded,
-                              fill: watchTogether.isInSession ? 1 : 0,
-                              color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
+              Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
+                builder: (context, watchTogether, companionRemote, _) {
+                  final isDesktop = PlatformDetector.isDesktop(context);
+                  final userProvider = context.watch<UserProfileProvider>();
+
+                  return FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateLeft: _navigateToSidebar,
+                    onNavigateDown: _focusContentFromAppBar,
+                    actions: [
+                      FocusableAction(icon: Symbols.refresh_rounded, iconColor: Colors.white, onPressed: _loadContent),
+                      // Watch Together
+                      FocusableAction(
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
+                        child: Stack(
+                          children: [
+                            IconButton(
+                              icon: AppIcon(
+                                Symbols.group_rounded,
+                                fill: watchTogether.isInSession ? 1 : 0,
+                                color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
+                              ),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
+                              ),
+                              tooltip: 'Watch Together',
                             ),
-                            onPressed: () =>
-                                Navigator.push(context, MaterialPageRoute(builder: (_) => const WatchTogetherScreen())),
-                            tooltip: 'Watch Together',
-                          ),
-                          // Badge showing participant count when in session
-                          if (watchTogether.isInSession && watchTogether.participantCount > 1)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                ),
-                                child: Text(
-                                  '${watchTogether.participantCount}',
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
+                            if (watchTogether.isInSession && watchTogether.participantCount > 1)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                  ),
+                                  child: Text(
+                                    '${watchTogether.participantCount}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
-              // Companion Remote button
-              Consumer<CompanionRemoteProvider>(
-                builder: (context, companionRemote, child) {
-                  final isDesktop = PlatformDetector.isDesktop(context);
-                  final hasDpadNav = isDesktop || PlatformDetector.isTV();
-
-                  return Focus(
-                    focusNode: hasDpadNav ? _companionRemoteButtonFocusNode : null,
-                    onKeyEvent: hasDpadNav ? _handleCompanionRemoteKeyEvent : null,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: hasDpadNav && _isCompanionRemoteFocused
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: Stack(
-                        children: [
-                          IconButton(
-                            icon: AppIcon(
-                              Symbols.phone_android_rounded,
-                              fill: companionRemote.isConnected ? 1 : 0,
-                              color: companionRemote.isConnected ? Theme.of(context).colorScheme.primary : Colors.white,
-                            ),
-                            onPressed: () {
-                              if (isDesktop) {
-                                RemoteSessionDialog.show(context);
-                              } else {
-                                Navigator.push(context, MaterialPageRoute(builder: (context) => MobileRemoteScreen()));
-                              }
-                            },
-                            tooltip: t.companionRemote.title,
-                          ),
-                          // Badge showing connection status
-                          if (companionRemote.isConnected)
-                            Positioned(
-                              top: 6,
-                              right: 6,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  shape: BoxShape.circle,
-                                  border: const Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-              Consumer<UserProfileProvider>(
-                builder: (context, userProvider, child) {
-                  return Focus(
-                    focusNode: _userButtonFocusNode,
-                    onKeyEvent: _handleUserKeyEvent,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: _isUserFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
-                        borderRadius: const BorderRadius.all(Radius.circular(20)),
-                      ),
-                      child: PopupMenuButton<String>(
-                        icon: userProvider.currentUser?.thumb != null
-                            ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
-                            : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
-                        onSelected: (value) {
-                          if (value == 'switch_profile') {
-                            _handleSwitchProfile(context);
-                          } else if (value == 'logout') {
-                            _handleLogout();
+                      // Companion Remote
+                      FocusableAction(
+                        onPressed: () {
+                          if (isDesktop) {
+                            RemoteSessionDialog.show(context);
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                            );
                           }
                         },
-                        itemBuilder: (context) => [
-                          // Only show Switch Profile if multiple users available
-                          if (userProvider.hasMultipleUsers)
+                        child: Stack(
+                          children: [
+                            IconButton(
+                              icon: AppIcon(
+                                Symbols.phone_android_rounded,
+                                fill: companionRemote.isConnected ? 1 : 0,
+                                color: companionRemote.isConnected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Colors.white,
+                              ),
+                              onPressed: () {
+                                if (isDesktop) {
+                                  RemoteSessionDialog.show(context);
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const MobileRemoteScreen()),
+                                  );
+                                }
+                              },
+                              tooltip: t.companionRemote.title,
+                            ),
+                            if (companionRemote.isConnected)
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                    border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      // User menu
+                      FocusableAction(
+                        onPressed: () => _showUserMenu(context, userProvider),
+                        child: PopupMenuButton<String>(
+                          icon: userProvider.currentUser?.thumb != null
+                              ? UserAvatarWidget(user: userProvider.currentUser!, size: 32, showIndicators: false)
+                              : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
+                          onSelected: (value) {
+                            if (value == 'switch_profile') {
+                              _handleSwitchProfile(context);
+                            } else if (value == 'logout') {
+                              _handleLogout();
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            if (userProvider.hasMultipleUsers)
+                              PopupMenuItem(
+                                value: 'switch_profile',
+                                child: Row(
+                                  children: [
+                                    AppIcon(Symbols.people_rounded, fill: 1),
+                                    const SizedBox(width: 8),
+                                    Text(t.discover.switchProfile),
+                                  ],
+                                ),
+                              ),
                             PopupMenuItem(
-                              value: 'switch_profile',
+                              value: 'logout',
                               child: Row(
                                 children: [
-                                  AppIcon(Symbols.people_rounded, fill: 1),
-                                  SizedBox(width: 8),
-                                  Text(t.discover.switchProfile),
+                                  AppIcon(Symbols.logout_rounded, fill: 1),
+                                  const SizedBox(width: 8),
+                                  Text(t.common.logout),
                                 ],
                               ),
                             ),
-                          PopupMenuItem(
-                            value: 'logout',
-                            child: Row(
-                              children: [
-                                AppIcon(Symbols.logout_rounded, fill: 1),
-                                SizedBox(width: 8),
-                                Text(t.common.logout),
-                              ],
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   );
                 },
               ),
@@ -1215,11 +1117,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
+                          const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
+                          const SizedBox(height: 16),
                           Text(t.discover.noContentAvailable),
-                          SizedBox(height: 8),
-                          Text(t.discover.addMediaToLibraries, style: TextStyle(color: Colors.grey)),
+                          const SizedBox(height: 8),
+                          Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -1264,34 +1166,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   }
                 },
                 itemBuilder: (context, index) {
-                  return _buildHeroItem(_onDeck[index]);
+                  return _buildHeroItem(_onDeck[index], heroHeight);
                 },
               ),
-              // Bottom gradient that extends past hero bounds to ensure seamless blend
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: -32, // Extend 32px past the hero section bounds
-                height: 80, // Tall enough to cover any gap
-                child: IgnorePointer(
-                  child: Builder(
-                    builder: (context) {
-                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                      return Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [bgColor.withValues(alpha: 0), bgColor],
-                            stops: const [0.0, 0.6],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
               // Page indicators with animated progress and pause/play button
+              if (!InputModeTracker.isKeyboardMode(context))
               Positioned(
                 bottom: 16,
                 left: -26,
@@ -1380,7 +1259,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  Widget _buildHeroItem(PlexMetadata heroItem) {
+  Widget _buildHeroItem(PlexMetadata heroItem, double heroHeight) {
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.title;
     final screenWidth = MediaQuery.of(context).size.width;
@@ -1388,6 +1267,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
+
+    // Spoiler protection
+    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
     // Build semantic label for hero item
     final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
@@ -1406,7 +1289,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           clipBehavior: Clip.none,
           children: [
             // Background Image with fade/zoom animation and parallax
-            if (heroItem.art != null || heroItem.grandparentArt != null)
+            if (heroItem.art != null || heroItem.backgroundSquare != null || heroItem.grandparentArt != null)
               ClipRect(
                 child: AnimatedBuilder(
                   animation: _scrollController,
@@ -1429,9 +1312,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         final client = _getClientForItem(heroItem);
                         final mediaQuery = MediaQuery.of(context);
                         final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
+                        final containerAspect = screenWidth / heroHeight;
                         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                           client: client,
-                          thumbPath: heroItem.art ?? heroItem.grandparentArt,
+                          thumbPath: heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArt,
                           maxWidth: mediaQuery.size.width,
                           maxHeight: mediaQuery.size.height * 0.7,
                           devicePixelRatio: dpr,
@@ -1462,20 +1346,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               left: 0,
               right: 0,
               bottom: -4, // Extend past stack bounds to ensure coverage
-              child: Builder(
-                builder: (context) {
-                  final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                  return Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                        stops: const [0.5, 0.85, 1.0],
+              child: IgnorePointer(
+                child: Builder(
+                  builder: (context) {
+                    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                          stops: const [0.5, 0.85, 1.0],
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
 
@@ -1597,7 +1483,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     if (!isLargeScreen) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
                     // Summary with episode info (Apple TV style)
-                    if (heroItem.summary != null) ...[
+                    if (heroItem.summary != null && !shouldHideSpoiler) ...[
                       const SizedBox(height: 12),
                       RichText(
                         maxLines: 2,
@@ -1626,6 +1512,21 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   : 'No description available',
                             ),
                           ],
+                        ),
+                      ),
+                    ] else if (shouldHideSpoiler && isEpisode && heroItem.parentIndex != null && heroItem.index != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                        style: TextStyle(
+                          color: isLargeScreen
+                              ? Colors.white.withValues(alpha: 0.7)
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: 14,
+                          height: 1.4,
                         ),
                       ),
                     ],
@@ -1692,7 +1593,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ] else
               Text(
                 t.common.play,
-                style: TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: Colors.black, fontSize: 14, fontWeight: FontWeight.w600),
               ),
           ],
         ),

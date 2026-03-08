@@ -32,6 +32,7 @@
     "delete": "Supprimer",
     "shuffle": "Mélanger",
     "addTo": "Ajouter à...",
+    "createNew": "Créer",
     "remove": "Supprimer",
     "paste": "Coller",
     "connect": "Connecter",
@@ -43,7 +44,7 @@
     "search": "Recherche",
     "home": "Accueil",
     "back": "Retour",
-    "settings": "Paramètres",
+    "settings": "Réglages",
     "mute": "Muet",
     "ok": "OK",
     "loading": "Chargement...",
@@ -52,13 +53,18 @@
     "exitConfirmMessage": "Êtes-vous sûr de vouloir quitter ?",
     "dontAskAgain": "Ne plus demander",
     "exit": "Quitter",
-    "viewAll": "Tout afficher"
+    "viewAll": "Tout afficher",
+    "checkingNetwork": "Vérification du réseau...",
+    "refreshingServers": "Actualisation des serveurs...",
+    "loadingServers": "Chargement des serveurs...",
+    "connectingToServers": "Connexion aux serveurs...",
+    "startingOfflineMode": "Démarrage en mode hors-ligne..."
   },
   "screens": {
     "licenses": "Licenses",
     "switchProfile": "Changer de profil",
     "subtitleStyling": "Configuration des sous-titres",
-    "mpvConfig": "Configuration MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Logs"
   },
   "update": {
@@ -117,10 +123,12 @@
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre non visionné",
     "showUnwatchedCountDescription": "Afficher le nombre d'épisodes non visionnés pour les séries et saisons",
+    "hideSpoilers": "Masquer les spoilers des épisodes non vus",
+    "hideSpoilersDescription": "Flouter les miniatures et masquer les descriptions des épisodes que vous n'avez pas encore regardés",
     "playerBackend": "Moteur de lecture",
     "exoPlayer": "ExoPlayer (Recommandé)",
     "exoPlayerDescription": "Lecteur natif Android avec meilleur support matériel",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Lecteur avancé avec plus de fonctionnalités et support des sous-titres ASS",
     "hardwareDecoding": "Décodage matériel",
     "hardwareDecodingDescription": "Utilisez l'accélération matérielle lorsqu'elle est disponible.",
@@ -144,6 +152,8 @@
     "keyboardShortcutsDescription": "Personnaliser les raccourcis clavier",
     "videoPlayerNavigation": "Navigation dans le lecteur vidéo",
     "videoPlayerNavigationDescription": "Utilisez les touches fléchées pour naviguer dans les commandes du lecteur vidéo.",
+    "crashReporting": "Rapports de plantage",
+    "crashReportingDescription": "Envoyer des rapports de plantage pour améliorer l'application",
     "debugLogging": "Journalisation de débogage",
     "debugLoggingDescription": "Activer la journalisation détaillée pour le dépannage",
     "viewLogs": "Voir les logs",
@@ -190,12 +200,18 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Montrez ce que vous regardez sur Discord",
+    "autoPip": "Image dans l'image automatique",
+    "autoPipDescription": "Activer automatiquement l'image dans l'image en quittant l'application pendant la lecture",
     "matchContentFrameRate": "Fréquence d'images du contenu correspondant",
     "matchContentFrameRateDescription": "Ajustez la fréquence de rafraîchissement de l'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Demander le profil à l'ouverture",
     "requireProfileSelectionOnOpenDescription": "Afficher la sélection de profil à chaque ouverture de l'application",
     "confirmExitOnBack": "Confirmer avant de quitter",
-    "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter"
+    "confirmExitOnBackDescription": "Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter",
+    "showNavBarLabels": "Afficher les libellés de la barre de navigation",
+    "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation"
   },
   "search": {
     "hint": "Rechercher des films, des séries, de la musique...",
@@ -266,8 +282,9 @@
     "goToSeason": "Aller à la saison",
     "shufflePlay": "Lecture aléatoire",
     "fileInfo": "Informations sur le fichier",
-    "confirmDelete": "Êtes-vous sûr de vouloir supprimer cet élément de votre système de fichiers?",
-    "deleteMultipleWarning": "Plusieurs éléments peuvent être supprimés.",
+    "deleteFromServer": "Supprimer du serveur",
+    "confirmDelete": "Cela supprimera définitivement ce média et ses fichiers de votre serveur. Cette action est irréversible.",
+    "deleteMultipleWarning": "Cela inclut tous les épisodes et leurs fichiers.",
     "mediaDeletedSuccessfully": "Élément média supprimé avec succès",
     "mediaFailedToDelete": "Échec de la suppression de l'élément média",
     "rate": "Noter"
@@ -323,6 +340,7 @@
     "settingsButton": "Paramètres vidéo",
     "audioTrackButton": "Pistes audio",
     "subtitlesButton": "Sous-titres",
+    "tracksButton": "Audio et sous-titres",
     "chaptersButton": "Chapitres",
     "versionsButton": "Versions vidéo",
     "pipButton": "Mode PiP (Picture-in-Picture)",
@@ -337,11 +355,14 @@
     "timelineSlider": "Timeline vidéo",
     "volumeSlider": "Niveau sonore",
     "endsAt": "Fin à ${time}",
+    "pipActive": "Lecture en mode image dans l'image",
     "pipFailed": "Échec du démarrage du mode image dans l'image",
     "pipErrors": {
       "androidVersion": "Nécessite Android 8.0 ou plus récent",
+      "iosVersion": "Nécessite iOS 15.0 ou plus récent",
       "permissionDisabled": "L'autorisation Image dans l'image est désactivée. Activez-la dans Paramètres > Applications > Plezy > Image dans l'image",
       "notSupported": "Cet appareil ne prend pas en charge le mode image dans l'image",
+      "voSwitchFailed": "Échec du changement de sortie vidéo pour l'image dans l'image",
       "failed": "Échec du démarrage du mode image dans l'image",
       "unknown": "Une erreur s'est produite : ${error}"
     },
@@ -402,19 +423,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configuration MPV",
+    "title": "Configuration mpv",
     "description": "Paramètres avancés du lecteur vidéo",
-    "properties": "Propriétés",
     "presets": "Préréglages",
-    "noProperties": "Aucune propriété configurée",
     "noPresets": "Aucun préréglage enregistré",
-    "addProperty": "Ajouter une propriété",
-    "editProperty": "Modifier la propriété",
-    "deleteProperty": "Supprimer la propriété",
-    "propertyKey": "Clé",
-    "propertyKeyHint": "e.g., hwdec, demuxer-max-bytes",
-    "propertyValue": "Valeur",
-    "propertyValueHint": "e.g., auto, 256000000",
     "saveAsPreset": "Enregistrer comme préréglage...",
     "presetName": "Nom du préréglage",
     "presetNameHint": "Entrez un nom pour ce préréglage",
@@ -424,8 +436,7 @@
     "presetLoaded": "Préréglage chargé",
     "presetDeleted": "Préréglage supprimé",
     "confirmDeletePreset": "Êtes-vous sûr de vouloir supprimer ce préréglage ?",
-    "confirmDeleteProperty": "Êtes-vous sûr de vouloir supprimer cette propriété ?",
-    "entriesCount": "${count} entrées"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Confirmer l'action"
@@ -547,9 +558,9 @@
     "licensesCount": "${count} licences"
   },
   "navigation": {
-    "libraries": "Bibliothèques",
-    "downloads": "Téléchargements",
-    "liveTv": "TV en direct"
+    "libraries": "Medias",
+    "downloads": "Téléch.",
+    "liveTv": "TV direct"
   },
   "liveTv": {
     "title": "TV en direct",
@@ -590,7 +601,6 @@
     "deleteFailedWithError": "Échec de la suppression de la collection: ${error}",
     "failedToLoadItems": "Échec du chargement des éléments de la collection: ${error}",
     "selectCollection": "Sélectionner une collection",
-    "createNewCollection": "Créer une nouvelle collection",
     "collectionName": "Nom de la collection",
     "enterCollectionName": "Entrez le nom de la collection",
     "addedToCollection": "Ajouté à la collection",
@@ -622,7 +632,6 @@
     "itemAdded": "Ajouté à la playlist",
     "itemRemoved": "Retiré de la playlist",
     "selectPlaylist": "Select Playlist",
-    "createNewPlaylist": "Créer une nouvelle playlist",
     "errorCreating": "Échec de la création de playlist",
     "errorDeleting": "Échec de suppression de playlist",
     "errorLoading": "Échec de chargement de playlists",
@@ -675,6 +684,10 @@
     "sessionCodeCopied": "Code de session copié dans le presse-papiers",
     "relayUnreachable": "Le serveur relais est inaccessible. Cela peut être dû au blocage de la connexion par votre fournisseur d'accès. Vous pouvez quand même essayer, mais Watch Together pourrait ne pas fonctionner.",
     "reconnectingToHost": "Reconnexion à l'hôte...",
+    "currentPlayback": "Lecture en cours",
+    "joinCurrentPlayback": "Rejoindre la lecture en cours",
+    "joinCurrentPlaybackDescription": "Revenez à ce que l'hôte regarde actuellement",
+    "failedToOpenCurrentPlayback": "Impossible d'ouvrir la lecture en cours",
     "participantJoined": "${name} a rejoint",
     "participantLeft": "${name} est parti"
   },
@@ -704,7 +717,13 @@
     "nvscalerDescription": "Mise à l'échelle NVIDIA pour une vidéo plus nette",
     "qualityFast": "Rapide",
     "qualityHQ": "Haute qualité",
-    "mode": "Mode"
+    "mode": "Mode",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",
@@ -732,11 +751,8 @@
       "minimize": "Réduire"
     },
     "pairing": {
-      "recent": "Récents",
       "scan": "Scanner",
       "manual": "Manuel",
-      "recentConnections": "Connexions récentes",
-      "quickReconnect": "Reconnexion rapide aux appareils précédemment jumelés",
       "pairWithDesktop": "Jumeler avec un bureau",
       "enterSessionDetails": "Saisissez les détails de la session affichés sur votre appareil de bureau",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +766,7 @@
       "cameraPermissionRequired": "L'autorisation de la caméra est requise pour scanner les QR codes.\nVeuillez accorder l'accès à la caméra dans les paramètres de votre appareil.",
       "cameraError": "Impossible de démarrer la caméra : ${error}",
       "scanInstruction": "Pointez votre caméra vers le QR code affiché sur votre bureau",
-      "noRecentConnections": "Aucune connexion récente",
-      "connectUsingManual": "Connectez-vous à un appareil via la saisie manuelle pour commencer",
       "invalidQrCode": "Format de QR code invalide",
-      "removeRecentConnection": "Supprimer la connexion récente",
-      "removeConfirm": "Supprimer \"${name}\" des connexions récentes ?",
       "validationHostRequired": "Veuillez saisir l'adresse de l'hôte",
       "validationHostFormat": "Le format doit être IP:port (ex : 192.168.1.100:48632)",
       "validationSessionIdRequired": "Veuillez saisir un ID de session",
@@ -763,8 +775,7 @@
       "validationPinLength": "Le PIN doit contenir 6 chiffres",
       "connectionTimedOut": "Délai de connexion expiré. Veuillez vérifier l'ID de session et le PIN.",
       "sessionNotFound": "Session introuvable. Veuillez vérifier vos identifiants.",
-      "failedToConnect": "Échec de la connexion : ${error}",
-      "failedToLoadRecent": "Échec du chargement des sessions récentes : ${error}"
+      "failedToConnect": "Échec de la connexion : ${error}"
     },
     "remote": {
       "disconnectConfirm": "Voulez-vous vous déconnecter de la session distante ?",
@@ -806,7 +817,9 @@
     "subtitleSync": "Synchronisation des sous-titres",
     "hdr": "HDR",
     "audioOutput": "Sortie audio",
-    "performanceOverlay": "Superposition de performance"
+    "performanceOverlay": "Superposition de performance",
+    "audioPassthrough": "Audio Pass-Through",
+    "audioNormalization": "Normalisation audio"
   },
   "externalPlayer": {
     "title": "Lecteur externe",

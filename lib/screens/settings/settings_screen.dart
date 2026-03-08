@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -22,7 +23,7 @@ import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/user_profile_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
-import '../../mpv/player/player_android.dart';
+import '../../mpv/player/platform/player_android.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/update_service.dart';
 import '../../utils/snackbar_helper.dart';
@@ -71,12 +72,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kShowServerNameOnHubs = 'show_server_name_on_hubs';
   static const _kAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
   static const _kShowUnwatchedCount = 'show_unwatched_count';
+  static const _kHideSpoilers = 'hide_spoilers';
+  static const _kShowNavBarLabels = 'show_nav_bar_labels';
   static const _kRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
   static const _kConfirmExitOnBack = 'confirm_exit_on_back';
   static const _kPlayerBackend = 'player_backend';
   static const _kExternalPlayer = 'external_player';
   static const _kHardwareDecoding = 'hardware_decoding';
+  static const _kAutoPip = 'auto_pip';
   static const _kMatchContentFrameRate = 'match_content_frame_rate';
+  static const _kTunneledPlayback = 'tunneled_playback';
   static const _kBufferSize = 'buffer_size';
   static const _kSubtitleStyling = 'subtitle_styling';
   static const _kMpvConfig = 'mpv_config';
@@ -94,6 +99,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
+  static const _kCrashReporting = 'crash_reporting';
   static const _kDebugLogging = 'debug_logging';
   static const _kViewLogs = 'view_logs';
   static const _kClearCache = 'clear_cache';
@@ -104,6 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
   bool _isLoading = true;
 
+  bool _crashReporting = true;
   bool _enableDebugLogging = false;
   bool _enableHardwareDecoding = true;
   int _bufferSize = 0;
@@ -119,7 +126,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _videoPlayerNavigationEnabled = false;
   int _maxVolume = 100;
   bool _enableDiscordRPC = false;
+  bool _autoPip = true;
   bool _matchContentFrameRate = false;
+  bool _tunneledPlayback = true;
   bool _useExoPlayer = true; // Android only: ExoPlayer vs MPV
   bool _requireProfileSelectionOnOpen = false;
   bool _useExternalPlayer = false;
@@ -178,6 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
     if (!mounted) return;
     setState(() {
+      _crashReporting = _settingsService.getCrashReporting();
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _enableHardwareDecoding = _settingsService.getEnableHardwareDecoding();
       _bufferSize = _settingsService.getBufferSize();
@@ -193,7 +203,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _maxVolume = _settingsService.getMaxVolume();
       _enableDiscordRPC = _settingsService.getEnableDiscordRPC();
+      _autoPip = _settingsService.getAutoPip();
       _matchContentFrameRate = _settingsService.getMatchContentFrameRate();
+      _tunneledPlayback = _settingsService.getTunneledPlayback();
       _useExoPlayer = _settingsService.getUseExoPlayer();
       _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
       _useExternalPlayer = _settingsService.getUseExternalPlayer();
@@ -369,6 +381,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 );
               },
             ),
+          if (!PlatformDetector.shouldUseSideNavigation(context))
+            Consumer<SettingsProvider>(
+              builder: (context, settingsProvider, child) {
+                return SwitchListTile(
+                  focusNode: _focusTracker.get(_kShowNavBarLabels),
+                  secondary: const AppIcon(Symbols.label_rounded, fill: 1),
+                  title: Text(t.settings.showNavBarLabels),
+                  subtitle: Text(t.settings.showNavBarLabelsDescription),
+                  value: settingsProvider.showNavBarLabels,
+                  onChanged: (value) async {
+                    await settingsProvider.setShowNavBarLabels(value);
+                  },
+                );
+              },
+            ),
           Consumer<SettingsProvider>(
             builder: (context, settingsProvider, child) {
               return SwitchListTile(
@@ -379,6 +406,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 value: settingsProvider.showUnwatchedCount,
                 onChanged: (value) async {
                   await settingsProvider.setShowUnwatchedCount(value);
+                },
+              );
+            },
+          ),
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, child) {
+              return SwitchListTile(
+                focusNode: _focusTracker.get(_kHideSpoilers),
+                secondary: const AppIcon(Symbols.visibility_off_rounded, fill: 1),
+                title: Text(t.settings.hideSpoilers),
+                subtitle: Text(t.settings.hideSpoilersDescription),
+                value: settingsProvider.hideSpoilers,
+                onChanged: (value) async {
+                  await settingsProvider.setHideSpoilers(value);
                 },
               );
             },
@@ -469,6 +510,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               await _settingsService.setEnableHardwareDecoding(value);
             },
           ),
+          if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS)
+            SwitchListTile(
+              focusNode: _focusTracker.get(_kAutoPip),
+              secondary: const AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1),
+              title: Text(t.settings.autoPip),
+              subtitle: Text(t.settings.autoPipDescription),
+              value: _autoPip,
+              onChanged: (value) async {
+                setState(() {
+                  _autoPip = value;
+                });
+                await _settingsService.setAutoPip(value);
+              },
+            ),
           if (Platform.isAndroid)
             SwitchListTile(
               focusNode: _focusTracker.get(_kMatchContentFrameRate),
@@ -481,6 +536,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   _matchContentFrameRate = value;
                 });
                 await _settingsService.setMatchContentFrameRate(value);
+              },
+            ),
+          if (Platform.isAndroid && _useExoPlayer)
+            SwitchListTile(
+              focusNode: _focusTracker.get(_kTunneledPlayback),
+              secondary: const AppIcon(Symbols.tv_options_input_settings_rounded, fill: 1),
+              title: Text(t.settings.tunneledPlayback),
+              subtitle: Text(t.settings.tunneledPlaybackDescription),
+              value: _tunneledPlayback,
+              onChanged: (value) async {
+                setState(() {
+                  _tunneledPlayback = value;
+                });
+                await _settingsService.setTunneledPlayback(value);
               },
             ),
           ListTile(
@@ -887,6 +956,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ),
           ),
           SwitchListTile(
+            focusNode: _focusTracker.get(_kCrashReporting),
+            secondary: const AppIcon(Symbols.monitoring_rounded, fill: 1),
+            title: Text(t.settings.crashReporting),
+            subtitle: Text(t.settings.crashReportingDescription),
+            value: _crashReporting,
+            onChanged: (value) async {
+              setState(() {
+                _crashReporting = value;
+              });
+              await _settingsService.setCrashReporting(value);
+            },
+          ),
+          SwitchListTile(
             focusNode: _focusTracker.get(_kDebugLogging),
             secondary: const AppIcon(Symbols.bug_report_rounded, fill: 1),
             title: Text(t.settings.debugLogging),
@@ -925,6 +1007,28 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => _showResetSettingsDialog(),
           ),
+          if (kDebugMode)
+            ListTile(
+              leading: const AppIcon(Symbols.error_rounded, fill: 1),
+              title: const Text('Test Sentry'),
+              subtitle: const Text('Send a test error'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                throw Exception("Example exception");
+              },
+            ),
+          if (kDebugMode)
+            ListTile(
+              leading: const AppIcon(Symbols.timer_rounded, fill: 1),
+              title: const Text('Test ANR'),
+              subtitle: const Text('Block the main thread for 10 seconds'),
+              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              onTap: () {
+                showSnackBar(context, 'Blocking main thread...');
+                final end = DateTime.now().add(const Duration(seconds: 10));
+                while (DateTime.now().isBefore(end)) {}
+              },
+            ),
         ],
       ),
     );
@@ -1516,6 +1620,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         return '한국어';
       case AppLocale.es:
         return 'Español';
+      case AppLocale.pt:
+        return 'Português';
+      case AppLocale.ja:
+        return '日本語';
+      case AppLocale.ru:
+        return 'Русский';
+      case AppLocale.pl:
+        return 'Polski';
+      case AppLocale.da:
+        return 'Dansk';
+      case AppLocale.nb:
+        return 'Norsk bokmål';
     }
   }
 

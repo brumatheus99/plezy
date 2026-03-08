@@ -1,7 +1,7 @@
 import 'dart:io' show Platform;
 
 import '../models.dart';
-import 'player_android.dart';
+import 'platform/player_android.dart';
 import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
@@ -89,6 +89,15 @@ abstract class Player {
   ///
   /// Pass [SubtitleTrack.off] to disable subtitles.
   Future<void> selectSubtitleTrack(SubtitleTrack track);
+
+  /// Select a secondary subtitle track (displayed simultaneously with primary).
+  ///
+  /// Only supported on mpv backends (desktop + Android mpv fallback).
+  /// Pass [SubtitleTrack.off] to disable secondary subtitles.
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack track);
+
+  /// Whether this player backend supports secondary subtitle tracks.
+  bool get supportsSecondarySubtitles;
 
   /// Add an external subtitle track.
   ///
@@ -228,6 +237,9 @@ abstract class Player {
   // ============================================
   // Lifecycle
   // ============================================
+
+  /// Whether the player has been disposed.
+  bool get disposed;
 
   /// Dispose of the player and release resources.
   ///

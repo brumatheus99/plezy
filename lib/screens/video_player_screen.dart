@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -7,12 +8,14 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/player_android.dart';
+import '../mpv/player/platform/player_android.dart';
 
+import '../../services/bif_thumbnail_service.dart';
 import '../../services/plex_client.dart';
 import '../models/livetv_channel.dart';
 import '../services/plex_api_cache.dart';
@@ -20,11 +23,12 @@ import '../models/plex_media_version.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
+import '../utils/plex_cache_parser.dart';
 import '../models/plex_media_info.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../models/companion_remote/remote_command_type.dart';
+import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -53,7 +57,7 @@ import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/language_codes.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/track_label_builder.dart' as tlb;
+import '../utils/track_label_builder.dart';
 import '../utils/plex_url_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/overlay_sheet.dart';
@@ -70,6 +74,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
   final SubtitleTrack? preferredSubtitleTrack;
+  final SubtitleTrack? preferredSecondarySubtitleTrack;
   final int selectedMediaIndex;
   final bool isOffline;
   final PlexVideoPlaybackData? playbackData;
@@ -90,6 +95,7 @@ class VideoPlayerScreen extends StatefulWidget {
     required this.metadata,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
+    this.preferredSecondarySubtitleTrack,
     this.selectedMediaIndex = 0,
     this.isOffline = false,
     this.playbackData,
@@ -135,11 +141,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
+  StreamSubscription<bool>? _mediaControlsPlayingSubscription;
+  StreamSubscription<Duration>? _mediaControlsPositionSubscription;
+  StreamSubscription<double>? _mediaControlsRateSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
+  bool _isApplyingTrackSelection = false;
   bool _isHandlingBack = false;
-  bool _hasThumbnails = false;
+  BifThumbnailService? _bifService;
 
   // Live TV channel navigation
   int _liveChannelIndex = -1;
@@ -170,12 +180,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Screen-level focus node: persists across loading/initialized phases so
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
+  bool _reclaimingFocus = false;
 
   // Cached setting: when false on Windows/Linux, ESC should not exit the player
   bool _videoPlayerNavigationEnabled = false;
 
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
+  bool _autoPipEnabled = false;
+
+  /// Whether to skip lifecycle actions because PiP is active or about to start.
+  /// iOS auto-PiP is system-initiated during the background transition, so
+  /// isPipActive may not be true yet — we also check the auto-PiP setting.
+  bool get _shouldSkipForPip =>
+      PipService().isPipActive.value || ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled);
 
   // Services
   MediaControlsManager? _mediaControlsManager;
@@ -198,14 +216,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return context.getClientForServer(widget.metadata.serverId!);
   }
 
-  String? _buildThumbnailUrl(BuildContext context, Duration time) {
-    final partId = _currentMediaInfo?.partId;
-    if (partId == null || widget.isOffline) return null;
-    final client = _getClientForMetadata(context);
-    return '${client.config.baseUrl}/library/parts/$partId/indexes/sd/${time.inMilliseconds}'.withPlexToken(
-      client.config.token,
-    );
-  }
+  Uint8List? _getThumbnailData(Duration time) => _bifService?.getThumbnail(time);
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
@@ -319,6 +330,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // App is being hidden (user is switching away)
         // Pause video since we don't support background playback (mobile only)
         if (PlatformDetector.isMobile(context)) {
+          if (_shouldSkipForPip) break;
           if (player != null && _isPlayerInitialized) {
             _wasPlayingBeforeInactive = player!.state.playing;
             if (_wasPlayingBeforeInactive) {
@@ -329,6 +341,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         break;
       case AppLifecycleState.paused:
+        if (_shouldSkipForPip) break;
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
         OsMediaControls.clear();
@@ -397,6 +410,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
       _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
+      _autoPipEnabled = settingsService.getAutoPip();
       final bufferSizeMB = settingsService.getBufferSize();
       final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
       final debugLoggingEnabled = settingsService.getEnableDebugLogging();
@@ -406,9 +420,50 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player = Player(useExoPlayer: useExoPlayer);
 
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
+      if (Platform.isAndroid && useExoPlayer) {
+        final tunneledPlayback = settingsService.getTunneledPlayback();
+        await player!.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+      }
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
         await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
+        // Set back-buffer to 1/4 of forward buffer
+        final backBytes = bufferSizeBytes ~/ 4;
+        await player!.setProperty('demuxer-max-back-bytes', backBytes.toString());
+      }
+      if (Platform.isAndroid) {
+        // Cap demuxer buffers based on device heap to prevent OOM crashes.
+        // Without limits, mpv defaults can consume 225MB+ just for demuxer
+        // buffering, which combined with decoded frames and GPU textures
+        // exhausts the process address space on memory-constrained devices.
+        final heapMB = await PlayerAndroid.getHeapSize();
+        if (heapMB > 0) {
+          int autoBackMB;
+          if (heapMB <= 256) {
+            autoBackMB = 16;
+          } else if (heapMB <= 512) {
+            autoBackMB = 32;
+          } else {
+            autoBackMB = 48;
+          }
+          if (bufferSizeMB == 0) {
+            // Auto mode: cap both forward and back buffer based on heap
+            int autoForwardMB;
+            if (heapMB <= 256) {
+              autoForwardMB = 32;
+            } else if (heapMB <= 512) {
+              autoForwardMB = 64;
+            } else {
+              autoForwardMB = 100;
+            }
+            await player!.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
+            await player!.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
+          } else {
+            // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
+            final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);
+            await player!.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
+          }
+        }
       }
       await player!.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
       await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
@@ -426,11 +481,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
       );
       await player!.setProperty('sub-ass-override', 'no');
+      await player!.setProperty('sub-ass-video-aspect-override', '1');
       await player!.setProperty('sub-pos', settingsService.getSubtitlePosition().toString());
 
       // Platform-specific settings
       if (Platform.isIOS) {
         await player!.setProperty('audio-exclusive', 'yes');
+      }
+
+      // Audio passthrough (desktop only - sends bitstream to receiver)
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        if (settingsService.getAudioPassthrough()) {
+          await player!.setAudioPassthrough(true);
+        }
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
@@ -451,6 +514,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
         await player!.setProperty('sub-delay', offsetSeconds.toString());
+      }
+
+      // Apply audio normalization (loudnorm filter)
+      if (settingsService.getAudioNormalization()) {
+        await player!.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
       }
 
       // Apply custom MPV config entries
@@ -535,6 +603,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
+          Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
 
           // Apply frame rate matching on Android if enabled
           if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
@@ -549,12 +618,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
       _positionSubscription = player!.streams.position.listen((position) {
+        // Fallback for cases where playbackRestart doesn't fire (observed on some
+        // offline Android playback flows). Prevents a permanent loading spinner.
+        if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
+          _hasFirstFrame.value = true;
+        }
+
         final duration = player!.state.duration;
         if (duration.inMilliseconds > 0 &&
             position.inMilliseconds >= duration.inMilliseconds - 1000 &&
             !_showPlayNextDialog &&
-            !_completionTriggered &&
-            _nextEpisode != null) {
+            !_completionTriggered) {
           _onVideoCompleted(true);
         }
       });
@@ -596,6 +670,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Set MPV video-sync mode for smoother playback when display is synced
       await player!.setProperty('video-sync', 'display-tempo');
 
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching: ${fps}fps', category: 'player'));
       appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms)');
     } catch (e) {
       appLogger.w('Failed to apply frame rate matching', error: e);
@@ -609,6 +684,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       await player!.clearVideoFrameRate();
       await player!.setProperty('video-sync', 'audio');
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player'));
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {
       appLogger.d('Failed to clear frame rate matching', error: e);
@@ -725,12 +801,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
 
     // Listen to playing state and update media controls
-    player!.streams.playing.listen((isPlaying) {
+    _mediaControlsPlayingSubscription = player!.streams.playing.listen((isPlaying) {
       _updateMediaControlsPlaybackState();
     });
 
     // Listen to position updates for media controls and Discord
-    player!.streams.position.listen((position) {
+    _mediaControlsPositionSubscription = player!.streams.position.listen((position) {
       _mediaControlsManager?.updatePlaybackState(
         isPlaying: player!.state.playing,
         position: position,
@@ -740,7 +816,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     });
 
     // Listen to playback rate changes for Discord Rich Presence
-    player!.streams.rate.listen((rate) {
+    _mediaControlsRateSubscription = player!.streams.rate.listen((rate) {
       DiscordRPCService.instance.updatePlaybackSpeed(rate);
     });
 
@@ -854,9 +930,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       if (episodes.isEmpty) return;
 
-      // Sort by season then episode number
+      // Sort by season then episode number, with Season 0 (Specials) at the end
       final sorted = List<PlexMetadata>.from(episodes)
         ..sort((a, b) {
+          final aIsSpecial = (a.parentIndex ?? 0) == 0;
+          final bIsSpecial = (b.parentIndex ?? 0) == 0;
+          if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
           final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
           if (seasonCmp != 0) return seasonCmp;
           return (a.index ?? 0).compareTo(b.index ?? 0);
@@ -1019,27 +1098,34 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         setState(() {
           _availableVersions = result.availableVersions.cast();
           _currentMediaInfo = result.mediaInfo;
-          _hasThumbnails = false;
+          _bifService?.dispose();
+          _bifService = null;
         });
 
-        // Check whether any thumbnails exist by requesting the first one
+        // Download and cache BIF thumbnail file
         if (_currentMediaInfo?.partId != null && !widget.isOffline) {
           final partId = _currentMediaInfo!.partId!;
           final client = _getClientForMetadata(context);
-          client.checkThumbnailsAvailable(partId).then((available) {
-            // Guard against media having changed while the probe was in flight
+          final service = BifThumbnailService();
+          service.load(client, partId).then((_) {
+            // Guard against media having changed while the download was in flight
             if (mounted && _currentMediaInfo?.partId == partId) {
-              setState(() => _hasThumbnails = available);
+              setState(() => _bifService = service);
+            } else {
+              service.dispose();
             }
           });
         }
 
         // Initialize video PIP and filter manager with player and available versions
         if (player != null) {
+          final settings = await SettingsService.getInstance();
           _videoFilterManager = VideoFilterManager(
             player: player!,
             availableVersions: _availableVersions,
             selectedMediaIndex: widget.selectedMediaIndex,
+            initialBoxFitMode: settings.getDefaultBoxFitMode(),
+            onBoxFitModeChanged: (mode) => settings.setDefaultBoxFitMode(mode),
           );
           // Update video filter once dimensions are available
           _videoFilterManager!.updateVideoFilter();
@@ -1050,6 +1136,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             _videoFilterManager?.enterPipMode();
           };
           _videoPIPManager!.isPipActive.addListener(_onPipStateChanged);
+
+          // Auto-PiP: set up callback for API 26-30 path and initial state
+          if (_autoPipEnabled) {
+            PipService.onAutoPipEntering = () {
+              _videoFilterManager?.enterPipMode();
+            };
+            if (player!.state.playing) {
+              _videoPIPManager!.updateAutoPipState(isPlaying: true);
+            }
+          }
 
           // Shader Service (MPV only)
           _shaderService = ShaderService(player!);
@@ -1087,10 +1183,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     } on PlaybackException catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, e.message);
       }
     } catch (e) {
       if (mounted) {
+        _hasFirstFrame.value = true; // Hide spinner on error
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
@@ -1135,10 +1233,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     appLogger.d('Starting offline playback: $videoPath');
 
+    // Load cached media info so track selection (audio language) works offline
+    PlexMediaInfo? mediaInfo;
+    try {
+      final serverId = widget.metadata.serverId;
+      if (serverId != null) {
+        final cached = await PlexApiCache.instance.get(serverId, '/library/metadata/${widget.metadata.ratingKey}');
+        final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
+        if (metadataJson != null) {
+          mediaInfo = PlexMediaInfo.fromMetadataJson(metadataJson);
+        }
+        appLogger.d(
+          'Offline media info: cached=${cached != null}, hasMedia=${metadataJson?['Media'] != null}, '
+          'audioTracks=${mediaInfo?.audioTracks.length ?? 0}, subtitleTracks=${mediaInfo?.subtitleTracks.length ?? 0}',
+        );
+      }
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+    }
+
     return PlaybackInitializationResult(
       availableVersions: [],
       videoUrl: videoPath.contains('://') ? videoPath : 'file://$videoPath',
-      mediaInfo: null,
+      mediaInfo: mediaInfo,
       externalSubtitles: const [],
       isOffline: true,
     );
@@ -1168,14 +1285,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  /// Apply the saved shader preset on playback start
+  /// Apply the saved shader preset on playback start.
+  /// Reads directly from SettingsService (synchronous SharedPreferences) to
+  /// avoid a race with ShaderProvider's async initialization.
   Future<void> _applySavedShaderPreset() async {
     if (_shaderService == null || !_shaderService!.isSupported) return;
 
     try {
       final shaderProvider = context.read<ShaderProvider>();
-      final preset = shaderProvider.savedPreset;
+      final settings = await SettingsService.getInstance();
+      final presetId = settings.getGlobalShaderPreset();
+      final preset =
+          (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ??
+          ShaderPreset.none;
       await _shaderService!.applyPreset(preset);
+      if (!mounted) return;
       shaderProvider.setCurrentPreset(preset);
     } catch (e) {
       appLogger.d('Could not apply shader preset', error: e);
@@ -1475,7 +1599,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (mounted) {
       final label = next.id == 'no'
           ? 'Subtitles: Off'
-          : 'Subtitles: ${tlb.TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
+          : 'Subtitles: ${TrackLabelBuilder.buildSubtitleLabel(title: next.title, language: next.language, codec: next.codec, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }
@@ -1494,7 +1618,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (mounted) {
       final label =
-          'Audio: ${tlb.TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
+          'Audio: ${TrackLabelBuilder.buildAudioLabel(title: next.title, language: next.language, codec: next.codec, channelsCount: next.channelsCount, index: nextIndex)}';
       showAppSnackBar(context, label, duration: const Duration(seconds: 1));
     }
   }
@@ -1592,10 +1716,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
-    // Remove PiP state listener, clear callback, and dispose video filter manager
+    // Remove PiP state listener, clear callbacks, disable auto-PiP, and dispose video filter manager
     _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
     _videoPIPManager?.onBeforeEnterPip = null;
+    _videoPIPManager?.disableAutoPip();
+    PipService.onAutoPipEntering = null;
     _videoFilterManager?.dispose();
+
+    // Release cached BIF thumbnail data
+    _bifService?.dispose();
 
     // Mark sleep timer for restart if truly exiting (not episode transition)
     if (!_isReplacingWithVideo) {
@@ -1613,6 +1742,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
+    _mediaControlsPlayingSubscription?.cancel();
+    _mediaControlsPositionSubscription?.cancel();
+    _mediaControlsRateSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -1672,6 +1804,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     }
 
+    Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
     player?.dispose();
     if (_activeRatingKey == widget.metadata.ratingKey) {
       _activeRatingKey = null;
@@ -1685,8 +1818,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// descendant has focus, so internal movement between child controls
   /// does NOT trigger this.
   void _onScreenFocusChanged() {
+    if (_reclaimingFocus) return;
     if (!_screenFocusNode.hasFocus && mounted && !_isExiting.value) {
+      _reclaimingFocus = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        _reclaimingFocus = false;
         if (mounted && !_isExiting.value && !_screenFocusNode.hasFocus) {
           _screenFocusNode.requestFocus();
         }
@@ -1717,6 +1853,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       DiscordRPCService.instance.resumePlayback();
     } else {
       DiscordRPCService.instance.pausePlayback();
+    }
+
+    // Update auto-PiP readiness
+    if (_autoPipEnabled) {
+      _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
     }
   }
 
@@ -1752,6 +1893,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
+    } else if (completed &&
+        _nextEpisode == null &&
+        !_completionTriggered) {
+      _completionTriggered = true;
+      _handleBackButton();
     }
   }
 
@@ -2049,26 +2195,64 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  /// Wait briefly for profile settings to load in offline mode.
+  /// This prevents default-track fallback when playback starts before
+  /// UserProfileProvider finishes initialization.
+  Future<void> _waitForProfileSettingsIfNeeded() async {
+    if (!widget.isOffline || !mounted) return;
+
+    final provider = context.read<UserProfileProvider>();
+    if (provider.profileSettings != null) return;
+
+    final completer = Completer<void>();
+    late VoidCallback listener;
+    listener = () {
+      if (provider.profileSettings != null && !completer.isCompleted) {
+        completer.complete();
+      }
+    };
+
+    provider.addListener(listener);
+    try {
+      await Future.any<void>([completer.future, Future.delayed(const Duration(seconds: 2))]);
+    } finally {
+      provider.removeListener(listener);
+    }
+  }
+
   /// Apply track selection using the TrackSelectionService
   Future<void> _applyTrackSelection() async {
-    if (!mounted || player == null) return;
+    if (!mounted || player == null || _isApplyingTrackSelection) return;
 
-    final profileSettings = context.read<UserProfileProvider>().profileSettings;
-    final settingsService = await SettingsService.getInstance();
-    final trackService = TrackSelectionService(
-      player: player!,
-      profileSettings: profileSettings,
-      metadata: widget.metadata,
-      plexMediaInfo: _currentMediaInfo,
-    );
+    _isApplyingTrackSelection = true;
+    try {
+      await _waitForProfileSettingsIfNeeded();
+      if (!mounted || player == null) return;
 
-    await trackService.selectAndApplyTracks(
-      preferredAudioTrack: widget.preferredAudioTrack,
-      preferredSubtitleTrack: widget.preferredSubtitleTrack,
-      defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
-      onAudioTrackChanged: _onAudioTrackChanged,
-      onSubtitleTrackChanged: _onSubtitleTrackChanged,
-    );
+      final profileSettings = context.read<UserProfileProvider>().profileSettings;
+      final settingsService = await SettingsService.getInstance();
+      if (!mounted || player == null) return;
+
+      final trackService = TrackSelectionService(
+        player: player!,
+        profileSettings: profileSettings,
+        metadata: widget.metadata,
+        plexMediaInfo: _currentMediaInfo,
+      );
+
+      await trackService.selectAndApplyTracks(
+        preferredAudioTrack: widget.preferredAudioTrack,
+        preferredSubtitleTrack: widget.preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: widget.preferredSecondarySubtitleTrack,
+        defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
+        onAudioTrackChanged: _onAudioTrackChanged,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+      );
+    } catch (e) {
+      appLogger.w('Failed to apply track selection', error: e);
+    } finally {
+      _isApplyingTrackSelection = false;
+    }
   }
 
   /// Rating key used for series/movie level language preferences.
@@ -2228,6 +2412,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
   }
 
+  /// Handle secondary subtitle track changes - no server save needed, just preserve for episode navigation
+  void _onSecondarySubtitleTrackChanged(SubtitleTrack track) {
+    // Secondary subtitle preference is carried via player.state.track.secondarySubtitle
+    // which is automatically read during episode navigation. No additional state needed.
+  }
+
   /// Set flag to skip orientation restoration when replacing with another video
   void setReplacingWithVideo() {
     _isReplacingWithVideo = true;
@@ -2271,6 +2461,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final currentAudioTrack = currentPlayer.state.track.audio;
     final currentSubtitleTrack = currentPlayer.state.track.subtitle;
+    final currentSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
 
     // Pause and stop current playback
     currentPlayer.pause();
@@ -2287,6 +2478,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         metadata: episodeMetadata,
         preferredAudioTrack: currentAudioTrack,
         preferredSubtitleTrack: currentSubtitleTrack,
+        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
         usePushReplacement: true,
         isOffline: widget.isOffline,
       );
@@ -2420,6 +2612,37 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           },
           child: Stack(
             children: [
+              // macOS PiP placeholder — video is in PiP window, show background with icon
+              // Placed before Video so controls render on top
+              if (Platform.isMacOS)
+                ValueListenableBuilder<bool>(
+                  valueListenable: PipService().isPipActive,
+                  builder: (context, isInPip, child) {
+                    if (!isInPip) return const SizedBox.shrink();
+                    return Positioned.fill(
+                      child: Container(
+                        color: Colors.black,
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Symbols.picture_in_picture_alt_rounded,
+                                size: 48,
+                                color: Colors.white.withValues(alpha: 0.5),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                t.videoControls.pipActive,
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               // Video player
               Center(
                 child: LayoutBuilder(
@@ -2475,8 +2698,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
+                        onCycleAudioTrack: _cycleAudioTrack,
+                        onCycleSubtitleTrack: _cycleSubtitleTrack,
                         onAudioTrackChanged: _onAudioTrackChanged,
                         onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                        onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
                         onSeekCompleted: (position) {
                           // Notify Watch Together of seek for sync
                           // Note: canControl() check is done in sync manager, not here
@@ -2498,9 +2724,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                         shaderService: _shaderService,
                         // ignore: no-empty-block - setState triggers rebuild to reflect shader change
                         onShaderChanged: () => setState(() {}),
-                        thumbnailUrlBuilder: _hasThumbnails && _currentMediaInfo?.partId != null
-                            ? (Duration time) => _buildThumbnailUrl(context, time)!
-                            : null,
+                        thumbnailDataBuilder: _bifService?.isAvailable == true ? _getThumbnailData : null,
                         isLive: widget.isLive,
                         liveChannelName: _liveChannelName,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
@@ -2850,7 +3074,7 @@ String _getHwdecValue(bool enabled) {
   if (Platform.isMacOS || Platform.isIOS) {
     return 'videotoolbox';
   } else if (Platform.isAndroid) {
-    return 'auto-safe';
+    return 'mediacodec,mediacodec-copy';
   } else {
     return 'auto'; // Windows, Linux
   }

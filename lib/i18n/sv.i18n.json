@@ -32,6 +32,7 @@
     "delete": "Ta bort",
     "shuffle": "Blanda",
     "addTo": "Lägg till i...",
+    "createNew": "Skapa ny",
     "remove": "Ta bort",
     "paste": "Klistra in",
     "connect": "Anslut",
@@ -43,7 +44,7 @@
     "search": "Sök",
     "home": "Hem",
     "back": "Tillbaka",
-    "settings": "Inställningar",
+    "settings": "Mer",
     "mute": "Ljud av",
     "ok": "OK",
     "loading": "Laddar...",
@@ -52,13 +53,18 @@
     "exitConfirmMessage": "Är du säker på att du vill avsluta?",
     "dontAskAgain": "Fråga inte igen",
     "exit": "Avsluta",
-    "viewAll": "Visa alla"
+    "viewAll": "Visa alla",
+    "checkingNetwork": "Kontrollerar nätverk...",
+    "refreshingServers": "Uppdaterar servrar...",
+    "loadingServers": "Laddar servrar...",
+    "connectingToServers": "Ansluter till servrar...",
+    "startingOfflineMode": "Startar offlineläge..."
   },
   "screens": {
     "licenses": "Licenser",
     "switchProfile": "Byt profil",
     "subtitleStyling": "Undertext-styling",
-    "mpvConfig": "MPV-konfiguration",
+    "mpvConfig": "mpv.conf",
     "logs": "Loggar"
   },
   "update": {
@@ -117,10 +123,12 @@
     "alwaysKeepSidebarOpenDescription": "Sidofältet förblir expanderat och innehållsytan anpassas",
     "showUnwatchedCount": "Visa antal osedda",
     "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
+    "hideSpoilers": "Dölj spoilers för osedda avsnitt",
+    "hideSpoilersDescription": "Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu",
     "playerBackend": "Spelarmotor",
     "exoPlayer": "ExoPlayer (Rekommenderad)",
     "exoPlayerDescription": "Android-nativ spelare med bättre hårdvarustöd",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Avancerad spelare med fler funktioner och ASS-undertextstöd",
     "hardwareDecoding": "Hårdvaruavkodning",
     "hardwareDecodingDescription": "Använd hårdvaruacceleration när tillgängligt",
@@ -144,6 +152,8 @@
     "keyboardShortcutsDescription": "Anpassa tangentbordsgenvägar",
     "videoPlayerNavigation": "Navigering i videospelaren",
     "videoPlayerNavigationDescription": "Använd piltangenter för att navigera videospelarens kontroller",
+    "crashReporting": "Kraschrapportering",
+    "crashReportingDescription": "Skicka kraschrapporter för att förbättra appen",
     "debugLogging": "Felsökningsloggning",
     "debugLoggingDescription": "Aktivera detaljerad loggning för felsökning",
     "viewLogs": "Visa loggar",
@@ -190,12 +200,18 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
+    "autoPip": "Automatisk bild-i-bild",
+    "autoPipDescription": "Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Fråga efter profil vid appstart",
     "requireProfileSelectionOnOpenDescription": "Visa profilval varje gång appen öppnas",
     "confirmExitOnBack": "Bekräfta innan avslut",
-    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen"
+    "confirmExitOnBackDescription": "Visa en bekräftelsedialog när du trycker tillbaka för att avsluta appen",
+    "showNavBarLabels": "Visa navigeringsfältets etiketter",
+    "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",
@@ -266,8 +282,9 @@
     "goToSeason": "Gå till säsong",
     "shufflePlay": "Blanda uppspelning",
     "fileInfo": "Filinformation",
-    "confirmDelete": "Är du säker på att du vill ta bort detta objekt från ditt filsystem?",
-    "deleteMultipleWarning": "Flera objekt kan komma att tas bort.",
+    "deleteFromServer": "Ta bort från servern",
+    "confirmDelete": "Detta kommer permanent ta bort detta media och dess filer från din server. Detta kan inte ångras.",
+    "deleteMultipleWarning": "Detta inkluderar alla avsnitt och deras filer.",
     "mediaDeletedSuccessfully": "Mediaobjekt borttaget",
     "mediaFailedToDelete": "Kunde inte ta bort mediaobjekt",
     "rate": "Betygsätt"
@@ -323,6 +340,7 @@
     "settingsButton": "Videoinställningar",
     "audioTrackButton": "Ljudspår",
     "subtitlesButton": "Undertexter",
+    "tracksButton": "Ljud och undertexter",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversioner",
     "pipButton": "Bild-i-bild läge",
@@ -337,11 +355,14 @@
     "timelineSlider": "Videotidslinje",
     "volumeSlider": "Volymnivå",
     "endsAt": "Slutar ${time}",
+    "pipActive": "Spelar i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
+      "iosVersion": "Kräver iOS 15.0 eller nyare",
       "permissionDisabled": "Bild-i-bild-behörighet är inaktiverad. Aktivera den i Inställningar > Appar > Plezy > Bild-i-bild",
       "notSupported": "Denna enhet stöder inte bild-i-bild-läge",
+      "voSwitchFailed": "Kunde inte byta videoutgång för bild-i-bild",
       "failed": "Bild-i-bild kunde inte starta",
       "unknown": "Ett fel uppstod: ${error}"
     },
@@ -402,19 +423,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-konfiguration",
+    "title": "mpv-konfiguration",
     "description": "Avancerade videospelares inställningar",
-    "properties": "Egenskaper",
     "presets": "Förval",
-    "noProperties": "Inga egenskaper konfigurerade",
     "noPresets": "Inga sparade förval",
-    "addProperty": "Lägg till egenskap",
-    "editProperty": "Redigera egenskap",
-    "deleteProperty": "Ta bort egenskap",
-    "propertyKey": "Egenskapsnyckel",
-    "propertyKeyHint": "t.ex. hwdec, demuxer-max-bytes",
-    "propertyValue": "Egenskapsvärde",
-    "propertyValueHint": "t.ex. auto, 256000000",
     "saveAsPreset": "Spara som förval...",
     "presetName": "Förvalnamn",
     "presetNameHint": "Ange ett namn för detta förval",
@@ -424,8 +436,7 @@
     "presetLoaded": "Förval laddat",
     "presetDeleted": "Förval borttaget",
     "confirmDeletePreset": "Är du säker på att du vill ta bort detta förval?",
-    "confirmDeleteProperty": "Är du säker på att du vill ta bort denna egenskap?",
-    "entriesCount": "${count} poster"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Bekräfta åtgärd"
@@ -548,7 +559,7 @@
   },
   "navigation": {
     "libraries": "Bibliotek",
-    "downloads": "Nedladdningar",
+    "downloads": "Nerladdat",
     "liveTv": "Live-TV"
   },
   "liveTv": {
@@ -617,7 +628,6 @@
     "itemAdded": "Tillagd i spellista",
     "itemRemoved": "Borttagen från spellista",
     "selectPlaylist": "Välj spellista",
-    "createNewPlaylist": "Skapa ny spellista",
     "errorCreating": "Det gick inte att skapa spellista",
     "errorDeleting": "Det gick inte att ta bort spellista",
     "errorLoading": "Det gick inte att ladda spellistor",
@@ -638,7 +648,6 @@
     "deleteFailedWithError": "Det gick inte att ta bort samlingen: ${error}",
     "failedToLoadItems": "Det gick inte att läsa in samlingsobjekt: ${error}",
     "selectCollection": "Välj samling",
-    "createNewCollection": "Skapa ny samling",
     "collectionName": "Samlingsnamn",
     "enterCollectionName": "Ange samlingsnamn",
     "addedToCollection": "Tillagd i samling",
@@ -695,6 +704,10 @@
     "sessionCodeCopied": "Sessionskod kopierad till urklipp",
     "relayUnreachable": "Reläservern kan inte nås. Detta kan bero på att din internetleverantör blockerar anslutningen. Du kan fortfarande försöka, men Watch Together kanske inte fungerar.",
     "reconnectingToHost": "Återansluter till värd...",
+    "currentPlayback": "Aktuell uppspelning",
+    "joinCurrentPlayback": "Gå med i aktuell uppspelning",
+    "joinCurrentPlaybackDescription": "Hoppa tillbaka till det värden tittar på just nu",
+    "failedToOpenCurrentPlayback": "Kunde inte öppna aktuell uppspelning",
     "participantJoined": "${name} gick med",
     "participantLeft": "${name} lämnade"
   },
@@ -704,7 +717,13 @@
     "nvscalerDescription": "NVIDIA-bildskalning för skarpare video",
     "qualityFast": "Snabb",
     "qualityHQ": "Hög kvalitet",
-    "mode": "Läge"
+    "mode": "Läge",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",
@@ -732,11 +751,8 @@
       "minimize": "Minimera"
     },
     "pairing": {
-      "recent": "Senaste",
       "scan": "Skanna",
       "manual": "Manuell",
-      "recentConnections": "Senaste anslutningar",
-      "quickReconnect": "Återanslut snabbt till tidigare parkopplade enheter",
       "pairWithDesktop": "Parkoppla med dator",
       "enterSessionDetails": "Ange sessionsuppgifterna som visas på din datorenhet",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +766,7 @@
       "cameraPermissionRequired": "Kamerabehörighet krävs för att skanna QR-koder.\nVänligen ge kameraåtkomst i enhetsinställningarna.",
       "cameraError": "Kunde inte starta kameran: ${error}",
       "scanInstruction": "Rikta kameran mot QR-koden som visas på din dator",
-      "noRecentConnections": "Inga senaste anslutningar",
-      "connectUsingManual": "Anslut till en enhet via Manuell inmatning för att komma igång",
       "invalidQrCode": "Ogiltigt QR-kodformat",
-      "removeRecentConnection": "Ta bort senaste anslutning",
-      "removeConfirm": "Ta bort \"${name}\" från senaste anslutningar?",
       "validationHostRequired": "Ange en värdadress",
       "validationHostFormat": "Format måste vara IP:port (t.ex. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Ange ett sessions-ID",
@@ -763,8 +775,7 @@
       "validationPinLength": "PIN måste vara 6 siffror",
       "connectionTimedOut": "Anslutningen tog för lång tid. Kontrollera sessions-ID och PIN.",
       "sessionNotFound": "Kunde inte hitta sessionen. Kontrollera dina uppgifter.",
-      "failedToConnect": "Kunde inte ansluta: ${error}",
-      "failedToLoadRecent": "Kunde inte ladda senaste sessioner: ${error}"
+      "failedToConnect": "Kunde inte ansluta: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Vill du koppla från fjärrsessionen?",
@@ -806,7 +817,9 @@
     "subtitleSync": "Undertextsynkronisering",
     "hdr": "HDR",
     "audioOutput": "Ljudutgång",
-    "performanceOverlay": "Prestandaöverlägg"
+    "performanceOverlay": "Prestandaöverlägg",
+    "audioPassthrough": "Ljudgenomkoppling",
+    "audioNormalization": "Ljudnormalisering"
   },
   "externalPlayer": {
     "title": "Extern spelare",

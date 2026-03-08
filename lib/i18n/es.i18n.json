@@ -32,6 +32,7 @@
     "delete": "Eliminar",
     "shuffle": "Aleatorio",
     "addTo": "Añadir a...",
+    "createNew": "Crear",
     "remove": "Eliminar",
     "paste": "Pegar",
     "connect": "Conectar",
@@ -52,13 +53,18 @@
     "exitConfirmMessage": "¿Estás seguro de que quieres salir?",
     "dontAskAgain": "No volver a preguntar",
     "exit": "Salir",
-    "viewAll": "Ver todo"
+    "viewAll": "Ver todo",
+    "checkingNetwork": "Comprobando red...",
+    "refreshingServers": "Actualizando servidores...",
+    "loadingServers": "Cargando servidores...",
+    "connectingToServers": "Conectando a servidores...",
+    "startingOfflineMode": "Iniciando modo sin conexión..."
   },
   "screens": {
     "licenses": "Licencias",
     "switchProfile": "Cambiar Perfil",
     "subtitleStyling": "Estilo de Subtítulos",
-    "mpvConfig": "Configuración de MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Logs"
   },
   "update": {
@@ -117,10 +123,12 @@
     "alwaysKeepSidebarOpenDescription": "La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse",
     "showUnwatchedCount": "Mostrar conteo de no vistos",
     "showUnwatchedCountDescription": "Mostrar el conteo de episodios no vistos en series y temporadas",
+    "hideSpoilers": "Ocultar spoilers de episodios no vistos",
+    "hideSpoilersDescription": "Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto",
     "playerBackend": "Reproductor",
     "exoPlayer": "ExoPlayer (Recomendado)",
     "exoPlayerDescription": "Reproductor nativo de Android con mejor soporte de hardware",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Reproductor avanzado con más funciones y soporte de subtítulos ASS",
     "hardwareDecoding": "Decodificación por Hardware",
     "hardwareDecodingDescription": "Usar aceleración por hardware cuando esté disponible",
@@ -144,6 +152,8 @@
     "keyboardShortcutsDescription": "Personalizar los atajos de teclado",
     "videoPlayerNavigation": "Navegación del Reproductor de Video",
     "videoPlayerNavigationDescription": "Usar las teclas de flecha para navegar por los controles del reproductor",
+    "crashReporting": "Informes de Errores",
+    "crashReportingDescription": "Enviar informes de errores para mejorar la aplicación",
     "debugLogging": "Registro de Depuración",
     "debugLoggingDescription": "Habilitar registros detallados para resolución de problemas",
     "viewLogs": "Ver Logs",
@@ -190,12 +200,18 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Presencia de Discord",
     "discordRichPresenceDescription": "Mostrar lo que estás viendo en Discord",
+    "autoPip": "Imagen en imagen automática",
+    "autoPipDescription": "Activar automáticamente imagen en imagen al salir de la app durante la reproducción",
     "matchContentFrameRate": "Ajustar frecuencia de actualización",
     "matchContentFrameRateDescription": "Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Pedir perfil al abrir la app",
     "requireProfileSelectionOnOpenDescription": "Mostrar selección de perfil cada vez que se abre la aplicación",
     "confirmExitOnBack": "Confirmar antes de salir",
-    "confirmExitOnBackDescription": "Mostrar un diálogo de confirmación al presionar atrás para salir de la app"
+    "confirmExitOnBackDescription": "Mostrar un diálogo de confirmación al presionar atrás para salir de la app",
+    "showNavBarLabels": "Mostrar etiquetas de la barra de navegación",
+    "showNavBarLabelsDescription": "Mostrar etiquetas de texto bajo los iconos de la barra de navegación"
   },
   "search": {
     "hint": "Buscar películas, series, música...",
@@ -266,8 +282,9 @@
     "goToSeason": "Ir a la temporada",
     "shufflePlay": "Reproducción Aleatoria",
     "fileInfo": "Información del Archivo",
-    "confirmDelete": "¿Estás seguro de que quieres eliminar este elemento de tu sistema de archivos?",
-    "deleteMultipleWarning": "Es posible que se eliminen varios elementos.",
+    "deleteFromServer": "Eliminar del servidor",
+    "confirmDelete": "Esto eliminará permanentemente este contenido y sus archivos de tu servidor. Esta acción no se puede deshacer.",
+    "deleteMultipleWarning": "Esto incluye todos los episodios y sus archivos.",
     "mediaDeletedSuccessfully": "Elemento multimedia eliminado con éxito",
     "mediaFailedToDelete": "Error al eliminar el elemento multimedia",
     "rate": "Calificar"
@@ -323,6 +340,7 @@
     "settingsButton": "Ajustes de video",
     "audioTrackButton": "Pistas de audio",
     "subtitlesButton": "Subtítulos",
+    "tracksButton": "Audio y subtítulos",
     "chaptersButton": "Capítulos",
     "versionsButton": "Versiones de video",
     "pipButton": "Modo PiP (Imagen en Imagen)",
@@ -337,11 +355,14 @@
     "timelineSlider": "Línea de tiempo del video",
     "volumeSlider": "Nivel de volumen",
     "endsAt": "Termina a las ${time}",
+    "pipActive": "Reproduciendo en Imagen en Imagen",
     "pipFailed": "Error al iniciar Imagen en Imagen",
     "pipErrors": {
       "androidVersion": "Requiere Android 8.0 o más reciente",
+      "iosVersion": "Requiere iOS 15.0 o más reciente",
       "permissionDisabled": "El permiso de Imagen en Imagen está desactivado. Actívalo en Ajustes > Aplicaciones > Plezy > Imagen en Imagen",
       "notSupported": "El dispositivo no soporta el modo Imagen en Imagen",
+      "voSwitchFailed": "Error al cambiar la salida de video para Imagen en Imagen",
       "failed": "Error al iniciar Imagen en Imagen",
       "unknown": "Ocurrió un error: ${error}"
     },
@@ -402,19 +423,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configuración de MPV",
+    "title": "Configuración de mpv",
     "description": "Ajustes avanzados del reproductor de video",
-    "properties": "Propiedades",
     "presets": "Ajustes preestablecidos",
-    "noProperties": "No hay propiedades configuradas",
     "noPresets": "No hay ajustes guardados",
-    "addProperty": "Añadir Propiedad",
-    "editProperty": "Editar Propiedad",
-    "deleteProperty": "Eliminar Propiedad",
-    "propertyKey": "Clave de la Propiedad",
-    "propertyKeyHint": "ej., hwdec, demuxer-max-bytes",
-    "propertyValue": "Valor de la Propiedad",
-    "propertyValueHint": "ej., auto, 256000000",
     "saveAsPreset": "Guardar como Ajuste...",
     "presetName": "Nombre del Ajuste",
     "presetNameHint": "Introduce un nombre para este ajuste",
@@ -424,8 +436,7 @@
     "presetLoaded": "Ajuste cargado",
     "presetDeleted": "Ajuste eliminado",
     "confirmDeletePreset": "¿Estás seguro de que quieres eliminar este ajuste?",
-    "confirmDeleteProperty": "¿Estás seguro de que quieres eliminar esta propiedad?",
-    "entriesCount": "${count} entradas"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Confirmar Acción"
@@ -547,7 +558,7 @@
     "licensesCount": "${count} licencias"
   },
   "navigation": {
-    "libraries": "Bibliotecas",
+    "libraries": "Medios",
     "downloads": "Descargas",
     "liveTv": "TV en vivo"
   },
@@ -590,7 +601,6 @@
     "deleteFailedWithError": "Error al eliminar la colección: ${error}",
     "failedToLoadItems": "Error al cargar los elementos de la colección: ${error}",
     "selectCollection": "Seleccionar Colección",
-    "createNewCollection": "Crear Nueva Colección",
     "collectionName": "Nombre de la Colección",
     "enterCollectionName": "Introduce el nombre de la colección",
     "addedToCollection": "Añadido a la colección",
@@ -622,7 +632,6 @@
     "itemAdded": "Añadido a la lista",
     "itemRemoved": "Eliminado de la lista",
     "selectPlaylist": "Seleccionar Lista",
-    "createNewPlaylist": "Crear Nueva Lista",
     "errorCreating": "Error al crear la lista",
     "errorDeleting": "Error al eliminar la lista",
     "errorLoading": "Error al cargar las listas",
@@ -675,6 +684,10 @@
     "sessionCodeCopied": "Código de sesión copiado al portapapeles",
     "relayUnreachable": "El servidor de retransmisión no está disponible. Esto puede deberse a que tu proveedor de internet bloquea la conexión. Puedes intentarlo de todos modos, pero Watch Together podría no funcionar.",
     "reconnectingToHost": "Reconectando con el anfitrión...",
+    "currentPlayback": "Reproducción actual",
+    "joinCurrentPlayback": "Unirse a la reproducción actual",
+    "joinCurrentPlaybackDescription": "Vuelve a lo que el anfitrión está viendo ahora mismo",
+    "failedToOpenCurrentPlayback": "No se pudo abrir la reproducción actual",
     "participantJoined": "${name} se unió",
     "participantLeft": "${name} se fue"
   },
@@ -704,7 +717,13 @@
     "nvscalerDescription": "Escalado de imagen NVIDIA para un video más nítido",
     "qualityFast": "Rápido",
     "qualityHQ": "Alta Calidad",
-    "mode": "Modo"
+    "mode": "Modo",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",
@@ -732,11 +751,8 @@
       "minimize": "Minimizar"
     },
     "pairing": {
-      "recent": "Recientes",
       "scan": "Escanear",
       "manual": "Manual",
-      "recentConnections": "Conexiones recientes",
-      "quickReconnect": "Reconectar rápidamente con dispositivos emparejados anteriormente",
       "pairWithDesktop": "Emparejar con escritorio",
       "enterSessionDetails": "Introduce los datos de la sesión que aparecen en tu dispositivo de escritorio",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +766,7 @@
       "cameraPermissionRequired": "Se necesita permiso de cámara para escanear códigos QR.\nPor favor, concede acceso a la cámara en los ajustes de tu dispositivo.",
       "cameraError": "No se pudo iniciar la cámara: ${error}",
       "scanInstruction": "Apunta tu cámara al código QR que aparece en tu escritorio",
-      "noRecentConnections": "No hay conexiones recientes",
-      "connectUsingManual": "Conéctate a un dispositivo usando la entrada manual para empezar",
       "invalidQrCode": "Formato de código QR no válido",
-      "removeRecentConnection": "Eliminar conexión reciente",
-      "removeConfirm": "¿Eliminar \"${name}\" de las conexiones recientes?",
       "validationHostRequired": "Por favor, introduce la dirección del host",
       "validationHostFormat": "El formato debe ser IP:puerto (ej., 192.168.1.100:48632)",
       "validationSessionIdRequired": "Por favor, introduce un ID de sesión",
@@ -763,8 +775,7 @@
       "validationPinLength": "El PIN debe tener 6 dígitos",
       "connectionTimedOut": "Tiempo de conexión agotado. Verifica el ID de sesión y el PIN.",
       "sessionNotFound": "No se encontró la sesión. Verifica tus credenciales.",
-      "failedToConnect": "Error al conectar: ${error}",
-      "failedToLoadRecent": "Error al cargar sesiones recientes: ${error}"
+      "failedToConnect": "Error al conectar: ${error}"
     },
     "remote": {
       "disconnectConfirm": "¿Quieres desconectarte de la sesión remota?",
@@ -806,7 +817,9 @@
     "subtitleSync": "Sincronización de subtítulos",
     "hdr": "HDR",
     "audioOutput": "Salida de audio",
-    "performanceOverlay": "Indicador de rendimiento"
+    "performanceOverlay": "Indicador de rendimiento",
+    "audioPassthrough": "Audio Passthrough",
+    "audioNormalization": "Normalización de audio"
   },
   "externalPlayer": {
     "title": "Reproductor externo",

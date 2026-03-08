@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:io' show Platform;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'screens/main_screen.dart';
 import 'screens/auth_screen.dart';
 import 'services/storage_service.dart';
-import 'services/macos_titlebar_service.dart';
+import 'services/macos_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
 import 'utils/platform_detector.dart';
@@ -15,7 +19,6 @@ import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
-import 'providers/server_state_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
@@ -46,6 +49,9 @@ import 'i18n/strings.g.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'utils/navigation_transitions.dart';
+import 'utils/log_redaction_manager.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
@@ -68,73 +74,148 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
-  // Initialize settings first to get saved locale
-  final settings = await SettingsService.getInstance();
-  final savedLocale = settings.getAppLocale();
+  final packageInfo = await PackageInfo.fromPlatform();
 
-  // Initialize localization with saved locale
-  LocaleSettings.setLocale(savedLocale);
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
+      options.release = 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
+      options.tracesSampleRate = 0;
+      options.attachStacktrace = true;
+      options.enableAutoSessionTracking = false;
+      options.recordHttpBreadcrumbs = false;
+      options.beforeSend = _beforeSend;
+      options.beforeBreadcrumb = _beforeBreadcrumb;
+    },
+    appRunner: () async {
+      // Initialize settings first to get saved locale
+      final settings = await SettingsService.getInstance();
+      final savedLocale = settings.getAppLocale();
 
-  // Needed for formatting dates in different locales
-  await initializeDateFormatting(savedLocale.languageCode, null);
+      // Initialize localization with saved locale
+      LocaleSettings.setLocale(savedLocale);
 
-  // Configure image cache for large libraries
-  PaintingBinding.instance.imageCache.maximumSizeBytes = 200 << 20; // 200MB
+      // Needed for formatting dates in different locales
+      await initializeDateFormatting(savedLocale.languageCode, null);
 
-  // Initialize services in parallel where possible
-  final futures = <Future<void>>[];
+      // Configure image cache for large libraries
+      PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
+      PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
 
-  // Initialize window_manager for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    futures.add(windowManager.ensureInitialized());
+      // Initialize services in parallel where possible
+      final futures = <Future<void>>[];
+
+      // Initialize window_manager for desktop platforms
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        futures.add(windowManager.ensureInitialized());
+      }
+
+      // Initialize TV detection and PiP service for Android
+      if (Platform.isAndroid) {
+        futures.add(TvDetectionService.getInstance());
+        // Initialize PiP service to listen for PiP state changes
+        PipService();
+      }
+
+      // Configure macOS window with custom titlebar (depends on window manager)
+      futures.add(MacOSWindowService.setupCustomTitlebar());
+
+      // Initialize storage service
+      futures.add(StorageService.getInstance());
+
+      // Initialize language codes for track selection
+      futures.add(LanguageCodes.initialize());
+
+      // Wait for all parallel services to complete
+      await Future.wait(futures);
+
+      // Initialize logger level based on debug setting
+      final debugEnabled = settings.getEnableDebugLogging();
+      setLoggerLevel(debugEnabled);
+
+      // Initialize download storage service with settings
+      await DownloadStorageService.instance.initialize(settings);
+
+      // Start global fullscreen state monitoring
+      FullscreenStateManager().startMonitoring();
+
+      // Initialize gamepad service for desktop platforms
+      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+        GamepadService.instance.start();
+        DiscordRPCService.instance.initialize();
+      }
+
+      // DTD service is available for MCP tooling connection if needed
+
+      // Register bundled shader licenses
+      _registerShaderLicenses();
+
+      runApp(const MainApp());
+    },
+  );
+}
+
+Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
+  if (breadcrumb == null) return null;
+
+  final message = breadcrumb.message;
+  final data = breadcrumb.data;
+  if (message == null && (data == null || data.isEmpty)) return breadcrumb;
+
+  return breadcrumb.copyWith(
+    message: message != null ? LogRedactionManager.redact(message) : null,
+    data: data?.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v)),
+  );
+}
+
+FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
+  // Drop event if user opted out of crash reporting
+  final instance = SettingsService.instanceOrNull;
+  if (instance != null && !instance.getCrashReporting()) return null;
+
+  // Drop harmless Windows file-lock errors from cache manager cleanup
+  var exceptions = event.exceptions;
+  if (exceptions != null &&
+      exceptions.any(
+        (e) =>
+            e.type == 'FileSystemException' &&
+            e.value != null &&
+            e.value!.contains('plexImageCache') &&
+            e.value!.contains('errno = 32'),
+      )) {
+    return null;
   }
 
-  // Initialize TV detection and PiP service for Android
-  if (Platform.isAndroid) {
-    futures.add(TvDetectionService.getInstance());
-    // Initialize PiP service to listen for PiP state changes
-    PipService();
+  // Scrub Plex tokens and server URLs from exception messages
+  if (exceptions != null) {
+    exceptions = exceptions.map((e) {
+      final value = e.value;
+      if (value != null) {
+        return e.copyWith(value: LogRedactionManager.redact(value));
+      }
+      return e;
+    }).toList();
   }
 
-  // Configure macOS window with custom titlebar (depends on window manager)
-  futures.add(MacOSTitlebarService.setupCustomTitlebar());
-
-  // Initialize storage service
-  futures.add(StorageService.getInstance());
-
-  // Initialize language codes for track selection
-  futures.add(LanguageCodes.initialize());
-
-  // Wait for all parallel services to complete
-  await Future.wait(futures);
-
-  // Initialize logger level based on debug setting
-  final debugEnabled = settings.getEnableDebugLogging();
-  setLoggerLevel(debugEnabled);
-
-  // Initialize download storage service with settings
-  await DownloadStorageService.instance.initialize(settings);
-
-  // Start global fullscreen state monitoring
-  FullscreenStateManager().startMonitoring();
-
-  // Initialize gamepad service for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-    GamepadService.instance.start();
-    DiscordRPCService.instance.initialize();
+  // Scrub breadcrumb messages and data
+  var breadcrumbs = event.breadcrumbs;
+  if (breadcrumbs != null) {
+    breadcrumbs = breadcrumbs.map((b) {
+      final message = b.message;
+      final data = b.data;
+      return b.copyWith(
+        message: message != null ? LogRedactionManager.redact(message) : null,
+        data: data?.map((k, v) => MapEntry(k, v is String ? LogRedactionManager.redact(v) : v)),
+      );
+    }).toList();
   }
 
-  // DTD service is available for MCP tooling connection if needed
-
-  // Register bundled shader licenses
-  _registerShaderLicenses();
-
-  runApp(const MainApp());
+  return event.copyWith(exceptions: exceptions, breadcrumbs: breadcrumbs);
 }
 
 void _registerShaderLicenses() {
   LicenseRegistry.addLicense(() async* {
-    yield LicenseEntryWithLineBreaks(
+    yield const LicenseEntryWithLineBreaks(
       ['Anime4K'],
       'MIT License\n'
       '\n'
@@ -159,7 +240,7 @@ void _registerShaderLicenses() {
       'OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE '
       'SOFTWARE.',
     );
-    yield LicenseEntryWithLineBreaks(
+    yield const LicenseEntryWithLineBreaks(
       ['NVIDIA Image Scaling (NVScaler)'],
       'The MIT License (MIT)\n'
       '\n'
@@ -256,7 +337,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => MultiServerProvider(_serverManager, _aggregationService)),
-        ChangeNotifierProvider(create: (context) => ServerStateProvider()),
         // Offline mode provider - depends on MultiServerProvider
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (_) {
@@ -292,15 +372,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           create: (context) => OfflineWatchProvider(
             syncService: _offlineWatchSyncService,
             downloadProvider: context.read<DownloadProvider>(),
-            apiCache: PlexApiCache.instance,
           ),
           update: (_, syncService, downloadProvider, previous) {
-            return previous ??
-                OfflineWatchProvider(
-                  syncService: syncService,
-                  downloadProvider: downloadProvider,
-                  apiCache: PlexApiCache.instance,
-                );
+            return previous ?? OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
           },
         ),
         // Existing providers
@@ -367,31 +441,56 @@ class SetupScreen extends StatefulWidget {
 }
 
 class _SetupScreenState extends State<SetupScreen> {
+  String _statusMessage = '';
+
   @override
   void initState() {
     super.initState();
     _loadSavedCredentials();
   }
 
+  void _setStatus(String message) {
+    if (mounted) setState(() => _statusMessage = message);
+  }
+
   Future<void> _loadSavedCredentials() async {
+    _setStatus(t.common.checkingNetwork);
+
     final storage = await StorageService.getInstance();
     final registry = ServerRegistry(storage);
 
-    // Check network connectivity early to fast-path airplane mode
-    final connectivityResult = await Connectivity().checkConnectivity();
+    // Check network connectivity early to fast-path airplane mode.
+    // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
+    final connectivityResult = await Connectivity().checkConnectivity().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => [ConnectivityResult.other],
+    );
     final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
 
     if (hasNetwork) {
-      // Refresh servers from API to get updated connection info (IPs may change)
-      await registry.refreshServersFromApi();
+      _setStatus(t.common.refreshingServers);
+
+      // Refresh servers from API to get updated connection info (IPs may change).
+      // If the stored token is invalid (e.g. after removing a Plex profile PIN),
+      // redirect to AuthScreen so the user can re-authenticate.
+      final refreshResult = await registry.refreshServersFromApi();
+      if (refreshResult == ServerRefreshResult.authError) {
+        await storage.clearCredentials();
+        if (mounted) {
+          Navigator.pushReplacement(context, fadeRoute(const AuthScreen()));
+        }
+        return;
+      }
     }
+
+    _setStatus(t.common.loadingServers);
 
     // Load all configured servers
     final servers = await registry.getServers();
 
     if (servers.isEmpty) {
       if (mounted) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const AuthScreen()));
+        Navigator.pushReplacement(context, fadeRoute(const AuthScreen()));
       }
       return;
     }
@@ -400,14 +499,14 @@ class _SetupScreenState extends State<SetupScreen> {
 
     // No network — skip connection attempts and go straight to offline mode
     if (!hasNetwork) {
+      _setStatus(t.common.startingOfflineMode);
       await context.read<DownloadProvider>().ensureInitialized();
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
-      );
+      Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
       return;
     }
+
+    _setStatus(t.common.connectingToServers);
 
     try {
       final result = await ServerConnectionOrchestrator.connectAndInitialize(
@@ -420,47 +519,59 @@ class _SetupScreenState extends State<SetupScreen> {
 
       if (!mounted) return;
 
-      if (result.hasConnections) {
+      if (result.hasConnections && result.firstClient != null) {
         // Resume any downloads that were interrupted by app kill
         final downloadProvider = context.read<DownloadProvider>();
         downloadProvider.ensureInitialized().then((_) {
           downloadProvider.resumeQueuedDownloads(result.firstClient!);
         });
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen(client: result.firstClient!)),
-        );
+        Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
       } else {
+        _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
-        );
+        Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
       }
     } catch (e, stackTrace) {
       appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
 
       if (mounted) {
+        _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen(isOfflineMode: true)),
-        );
+        Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [const CircularProgressIndicator(), const SizedBox(height: 16), Text(t.common.loading)],
-        ),
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Stack(
+        children: [
+          // Icon dead-center, matching Android 12+ splash position.
+          // 192dp accounts for the 16% inset in ic_launcher.xml.
+          Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
+          // Status text below center, independent of icon position.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).size.height * 0.5 - 140,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                _statusMessage,
+                key: ValueKey(_statusMessage),
+                textAlign: TextAlign.center,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

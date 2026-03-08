@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_channel.dart';
@@ -68,6 +69,7 @@ class GuideTabState extends State<GuideTab> {
 
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
     // If still loading programs, defer until the Focus widget is in the tree.
     if (_isLoading) {
       _pendingFocus = true;
@@ -533,7 +535,7 @@ class GuideTabState extends State<GuideTab> {
               children: [
                 Row(
                   children: [
-                    SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
+                    const SizedBox(width: _channelColumnWidth, height: _timeHeaderHeight),
                     Expanded(
                       child: SingleChildScrollView(
                         controller: _headerHorizontalController,
@@ -843,11 +845,12 @@ class GuideTabState extends State<GuideTab> {
   // ---------------------------------------------------------------------------
 
   Widget _buildTimeHeader(ThemeData theme) {
+    final is24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
     final slots = <Widget>[];
     var current = _gridStart;
 
     while (current.isBefore(_gridEnd)) {
-      final timeStr = '${current.hour.toString().padLeft(2, '0')}:${current.minute.toString().padLeft(2, '0')}';
+      final timeStr = formatClockTime(current, is24Hour: is24Hour);
       slots.add(
         SizedBox(
           width: _slotWidth,
@@ -999,16 +1002,16 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       materialColor = theme.colorScheme.primary.withValues(alpha: 0.25);
     } else if (isCurrentlyAiring) {
-      materialColor = theme.colorScheme.primaryContainer;
+      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.3);
     } else {
-      materialColor = theme.colorScheme.surfaceContainerHigh;
+      materialColor = theme.colorScheme.onSurface.withValues(alpha: 0.12);
     }
 
     Color titleColor;
     if (isFocused) {
       titleColor = theme.colorScheme.primary;
     } else if (isCurrentlyAiring) {
-      titleColor = theme.colorScheme.onPrimaryContainer;
+      titleColor = theme.colorScheme.onSurface;
     } else {
       titleColor = theme.colorScheme.onSurface;
     }
@@ -1017,7 +1020,7 @@ class GuideTabState extends State<GuideTab> {
     if (isFocused) {
       subtitleColor = theme.colorScheme.primary.withValues(alpha: 0.7);
     } else if (isCurrentlyAiring) {
-      subtitleColor = theme.colorScheme.onPrimaryContainer.withValues(alpha: 0.7);
+      subtitleColor = theme.colorScheme.onSurfaceVariant;
     } else {
       subtitleColor = theme.colorScheme.onSurfaceVariant;
     }
@@ -1025,14 +1028,12 @@ class GuideTabState extends State<GuideTab> {
     return Opacity(
       opacity: isPast ? 0.5 : 1.0,
       child: Material(
-        color: materialColor,
+        color: isFocused ? materialColor : Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
           side: isFocused ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
         ),
         child: InkWell(
           canRequestFocus: false,
-          borderRadius: const BorderRadius.all(Radius.circular(4)),
           onTap: () => _showProgramDetails(channel, program),
           child: Container(
             decoration: BoxDecoration(
@@ -1041,34 +1042,37 @@ class GuideTabState extends State<GuideTab> {
                 right: isLast ? BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)) : BorderSide.none,
               ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  program.grandparentTitle ?? program.title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
-                    color: titleColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (program.grandparentTitle != null)
+            child: Container(
+              color: isFocused ? null : materialColor,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   Text(
-                    '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                    program.grandparentTitle ?? program.title,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: isCurrentlyAiring ? FontWeight.w600 : FontWeight.normal,
+                      color: titleColor,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (program.startTime != null)
-                  Text(
-                    '${program.startTime!.hour.toString().padLeft(2, '0')}:${program.startTime!.minute.toString().padLeft(2, '0')} · ${formatDurationTextual(program.durationMinutes * 60000)}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
-                    maxLines: 1,
-                  ),
-              ],
+                  if (program.grandparentTitle != null)
+                    Text(
+                      '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
+                      style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  if (program.startTime != null)
+                    Text(
+                      '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                      style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
+                      maxLines: 1,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

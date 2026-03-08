@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../services/settings_service.dart' show EpisodePosterMode;
 import '../widgets/plex_optimized_image.dart' show kBlurArtwork, obfuscateText;
@@ -89,9 +90,11 @@ class PlexMetadata with MultiServerFields {
   final List<PlexRole>? role; // Cast members
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
+  final int? subtitleMode; // Per-media subtitle mode (0=manual, 1=foreign audio, 2=always, -1=account default)
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
   final int? librarySectionID; // Library section ID this item belongs to
+  final String? librarySectionTitle; // Library section title this item belongs to
   final String? ratingImage; // Rating source URI (e.g. rottentomatoes://image.rating.ripe)
   final String? audienceRatingImage; // Audience rating source URI
   final String? tagline;
@@ -110,6 +113,9 @@ class PlexMetadata with MultiServerFields {
 
   // Clear logo URL (extracted from Image array, but serialized for offline storage)
   final String? clearLogo;
+
+  // Square background art URL (extracted from Image array, used for near-square hero layouts)
+  final String? backgroundSquare;
 
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
@@ -171,9 +177,11 @@ class PlexMetadata with MultiServerFields {
     this.role,
     this.audioLanguage,
     this.subtitleLanguage,
+    this.subtitleMode,
     this.playlistItemID,
     this.playQueueItemID,
     this.librarySectionID,
+    this.librarySectionTitle,
     this.ratingImage,
     this.audienceRatingImage,
     this.tagline,
@@ -184,6 +192,7 @@ class PlexMetadata with MultiServerFields {
     this.serverId,
     this.serverName,
     this.clearLogo,
+    this.backgroundSquare,
   });
 
   /// Create a copy of this metadata with optional field overrides
@@ -226,9 +235,11 @@ class PlexMetadata with MultiServerFields {
     List<PlexRole>? role,
     String? audioLanguage,
     String? subtitleLanguage,
+    int? subtitleMode,
     int? playlistItemID,
     int? playQueueItemID,
     int? librarySectionID,
+    String? librarySectionTitle,
     String? ratingImage,
     String? audienceRatingImage,
     String? tagline,
@@ -239,6 +250,7 @@ class PlexMetadata with MultiServerFields {
     String? serverId,
     String? serverName,
     String? clearLogo,
+    String? backgroundSquare,
   }) {
     return PlexMetadata(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -279,9 +291,11 @@ class PlexMetadata with MultiServerFields {
       role: role ?? this.role,
       audioLanguage: audioLanguage ?? this.audioLanguage,
       subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
+      subtitleMode: subtitleMode ?? this.subtitleMode,
       playlistItemID: playlistItemID ?? this.playlistItemID,
       playQueueItemID: playQueueItemID ?? this.playQueueItemID,
       librarySectionID: librarySectionID ?? this.librarySectionID,
+      librarySectionTitle: librarySectionTitle ?? this.librarySectionTitle,
       ratingImage: ratingImage ?? this.ratingImage,
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
       tagline: tagline ?? this.tagline,
@@ -292,33 +306,46 @@ class PlexMetadata with MultiServerFields {
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
       clearLogo: clearLogo ?? this.clearLogo,
+      backgroundSquare: backgroundSquare ?? this.backgroundSquare,
     );
   }
 
-  /// Extract clearLogo from Image array in raw JSON
-  static String? _extractClearLogoFromJson(Map<String, dynamic> json) {
+  /// Extract an image URL by type from the Image array in raw JSON
+  static String? _extractImageFromJson(Map<String, dynamic> json, String imageType) {
     if (!json.containsKey('Image')) return null;
 
     final images = json['Image'] as List?;
     if (images == null) return null;
 
     for (var image in images) {
-      if (image is Map && image['type'] == 'clearLogo') {
+      if (image is Map && image['type'] == imageType) {
         return image['url'] as String?;
       }
     }
     return null;
   }
 
-  /// Create from JSON with clearLogo extracted from Image array
+  /// Create from JSON with Image array fields extracted
   factory PlexMetadata.fromJsonWithImages(Map<String, dynamic> json) {
-    // Extract clearLogo before parsing
-    final clearLogoUrl = _extractClearLogoFromJson(json);
-    // Add it to the json so it gets parsed
+    final clearLogoUrl = _extractImageFromJson(json, 'clearLogo');
     if (clearLogoUrl != null) {
       json['clearLogo'] = clearLogoUrl;
     }
+    final backgroundSquareUrl = _extractImageFromJson(json, 'backgroundSquare');
+    if (backgroundSquareUrl != null) {
+      json['backgroundSquare'] = backgroundSquareUrl;
+    }
     return PlexMetadata.fromJson(json);
+  }
+
+  /// Returns the best hero art path based on the container's aspect ratio.
+  /// Uses backgroundSquare when the container is closer to 1:1 than 16:9.
+  String? heroArt({required double containerAspectRatio}) {
+    // Threshold = midpoint of 1:1 (1.0) and 16:9 (~1.78) ≈ 1.39
+    if (containerAspectRatio < 1.39 && backgroundSquare != null) {
+      return backgroundSquare;
+    }
+    return art;
   }
 
   // Helper to get the display title (show name for episodes/seasons, title otherwise)
@@ -426,8 +453,20 @@ class PlexMetadata with MultiServerFields {
     return viewCount != null && viewCount! > 0;
   }
 
-  factory PlexMetadata.fromJson(Map<String, dynamic> json) =>
-      _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
+  factory PlexMetadata.fromJson(Map<String, dynamic> json) {
+    // Plex API returns subtitleMode as a string
+    if (json['subtitleMode'] is String) {
+      json = {...json, 'subtitleMode': num.tryParse(json['subtitleMode'] as String)};
+    }
+    try {
+      return _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
+    } on TypeError catch (e, st) {
+      Sentry.captureException(e, stackTrace: st, withScope: (scope) {
+        scope.setContexts('json', json);
+      });
+      rethrow;
+    }
+  }
 
   static Map<String, dynamic> _obfuscateJson(Map<String, dynamic> json) {
     final copy = Map<String, dynamic>.from(json);

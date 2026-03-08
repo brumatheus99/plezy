@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/utils/content_utils.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -27,10 +29,12 @@ class MediaCard extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // Callback to refresh the entire parent list
   final bool forceGridMode;
+  final bool forceListMode;
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
   final bool isOffline; // True for downloaded content without server access
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
+  final bool showServerName; // Show server name in list view (multi-server)
 
   const MediaCard({
     super.key,
@@ -41,10 +45,12 @@ class MediaCard extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
     this.forceGridMode = false,
+    this.forceListMode = false,
     this.isInContinueWatching = false,
     this.collectionId,
     this.isOffline = false,
     this.mixedHubContext = false,
+    this.showServerName = false,
   });
 
   @override
@@ -164,7 +170,14 @@ class MediaCardState extends State<MediaCard> {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = context.watch<SettingsProvider>();
-    final viewMode = widget.forceGridMode ? ViewMode.grid : settingsProvider.viewMode;
+    final ViewMode viewMode;
+    if (widget.forceListMode) {
+      viewMode = ViewMode.list;
+    } else if (widget.forceGridMode) {
+      viewMode = ViewMode.grid;
+    } else {
+      viewMode = settingsProvider.viewMode;
+    }
 
     final semanticLabel = _buildSemanticLabel();
     final localPosterPath = _getLocalPosterPath(context);
@@ -182,6 +195,7 @@ class MediaCardState extends State<MediaCard> {
             density: settingsProvider.libraryDensity,
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
+            showServerName: widget.showServerName,
           );
 
     // MediaContextMenu as a non-widget helper — only wrap with its key for
@@ -204,7 +218,7 @@ class MediaCardState extends State<MediaCard> {
   Widget _buildGridCard(BuildContext context, String semanticLabel, String? localPosterPath) {
     final item = widget.item;
     // Compute actual poster dimensions from card dimensions
-    final posterWidth = widget.width != null ? widget.width! - 16 : null; // 8px padding each side
+    final posterWidth = widget.width != null ? widget.width! - 6 : null; // 3px padding each side
     final posterHeight = widget.height;
 
     return SizedBox(
@@ -218,7 +232,7 @@ class MediaCardState extends State<MediaCard> {
         onSecondaryTap: _showContextMenu,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(3),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -264,7 +278,7 @@ class MediaCardState extends State<MediaCard> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               // Title (flattened — no inner Column)
               Text(
                 item is PlexPlaylist ? item.title : (item as PlexMetadata).displayTitle,
@@ -297,6 +311,7 @@ class _MediaCardList extends StatelessWidget {
   final LibraryDensity density;
   final bool isOffline;
   final String? localPosterPath;
+  final bool showServerName;
 
   const _MediaCardList({
     required this.item,
@@ -309,6 +324,7 @@ class _MediaCardList extends StatelessWidget {
     required this.density,
     this.isOffline = false,
     this.localPosterPath,
+    this.showServerName = false,
   });
 
   double _basePosterWidth() {
@@ -557,8 +573,11 @@ class _MediaCardList extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
-                  // Summary
-                  if (item.summary != null) ...[
+                  // Summary (hidden when spoiler protection is active)
+                  if (!(item is PlexMetadata &&
+                          context.watch<SettingsProvider>().hideSpoilers &&
+                          (item as PlexMetadata).shouldHideSpoiler) &&
+                      item.summary != null) ...[
                     Text(
                       item.summary!,
                       maxLines: _summaryMaxLines,
@@ -568,6 +587,32 @@ class _MediaCardList extends StatelessWidget {
                         fontSize: _summaryFontSize,
                         height: 1.3,
                       ),
+                    ),
+                  ],
+                  // Server name (multi-server mode)
+                  if (showServerName && item is PlexMetadata && (item as PlexMetadata).serverName != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        AppIcon(
+                          Symbols.dns_rounded,
+                          fill: 1,
+                          size: _metadataFontSize + 2,
+                          color: tokens(context).textMuted.withValues(alpha: 0.6),
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            (item as PlexMetadata).serverName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: tokens(context).textMuted.withValues(alpha: 0.6),
+                              fontSize: _metadataFontSize,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ],
@@ -605,12 +650,28 @@ Widget _buildPosterImage(
       localFilePath: localPosterPath,
     );
   } else if (item is PlexMetadata) {
-    final episodePosterMode = context.watch<SettingsProvider>().episodePosterMode;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final episodePosterMode = settingsProvider.episodePosterMode;
+    final shouldBlur =
+        settingsProvider.hideSpoilers &&
+        item.shouldHideSpoiler &&
+        episodePosterMode == EpisodePosterMode.episodeThumbnail;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
+
+    Widget image;
 
     // Use thumb image type for 16:9 content (episodes, or movies in mixed hubs)
     if (item.usesWideAspectRatio(episodePosterMode, mixedHubContext: mixedHubContext)) {
-      return PlexOptimizedImage.thumb(
+      image = PlexOptimizedImage.thumb(
+        client: isOffline ? null : context.getClientWithFallback(item.serverId),
+        imagePath: posterUrl,
+        width: knownWidth ?? double.infinity,
+        height: knownHeight ?? double.infinity,
+        fit: BoxFit.cover,
+        localFilePath: localPosterPath,
+      );
+    } else {
+      image = PlexOptimizedImage.poster(
         client: isOffline ? null : context.getClientWithFallback(item.serverId),
         imagePath: posterUrl,
         width: knownWidth ?? double.infinity,
@@ -620,14 +681,12 @@ Widget _buildPosterImage(
       );
     }
 
-    return PlexOptimizedImage.poster(
-      client: isOffline ? null : context.getClientWithFallback(item.serverId),
-      imagePath: posterUrl,
-      width: knownWidth ?? double.infinity,
-      height: knownHeight ?? double.infinity,
-      fit: BoxFit.cover,
-      localFilePath: localPosterPath,
-    );
+    if (shouldBlur) {
+      return ClipRect(
+        child: ImageFiltered(imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12), child: image),
+      );
+    }
+    return image;
   }
 
   return SkeletonLoader(
@@ -828,7 +887,7 @@ class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProvid
           identifier: "skeleton-loader",
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: _animation.value),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: _animation.value * 0.15),
               borderRadius: widget.borderRadius ?? BorderRadius.circular(tokens(context).radiusSm),
             ),
             child: widget.child,

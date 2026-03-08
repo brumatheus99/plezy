@@ -37,8 +37,9 @@ class _MenuAction {
   final IconData icon;
   final String label;
   final Color? hoverColor;
+  final Color? foregroundColor;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor});
+  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
 }
 
 /// A reusable wrapper widget that adds a context menu (long press / right click)
@@ -81,7 +82,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Used for keyboard/gamepad long-press activation.
   /// If [position] is null, the menu will appear at the center of this widget.
   void showContextMenu(BuildContext menuContext, {Offset? position}) {
-    _openedFromKeyboard = true;
+    _openedFromKeyboard = position == null;
     if (position != null) {
       _tapPosition = position;
     } else {
@@ -210,14 +211,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Go to Series (for episodes and seasons)
+      // Go to Series (for episodes and seasons) — hide if already on that series' detail screen,
+      // or on a season screen belonging to the same series
+      final ancestorMediaDetail = context.findAncestorWidgetOfExactType<MediaDetailScreen>();
+      final ancestorSeasonDetail = context.findAncestorWidgetOfExactType<SeasonDetailScreen>();
+      final ancestorSeriesKey =
+          ancestorMediaDetail?.metadata.ratingKey ?? ancestorSeasonDetail?.season.parentRatingKey;
+      // For episodes, the show key is grandparentRatingKey; for seasons, it's parentRatingKey
+      final itemSeriesKey =
+          mediaType == PlexMediaType.episode ? metadata.grandparentRatingKey : metadata.parentRatingKey;
       if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.season) &&
-          metadata.grandparentTitle != null) {
+          itemSeriesKey != null &&
+          ancestorSeriesKey != itemSeriesKey) {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
       }
 
-      // Go to Season (for episodes)
-      if (mediaType == PlexMediaType.episode && metadata.parentTitle != null) {
+      // Go to Season (for episodes) — hide if already on that season's detail screen
+      if (mediaType == PlexMediaType.episode &&
+          metadata.parentTitle != null &&
+          context.findAncestorWidgetOfExactType<SeasonDetailScreen>()?.season.ratingKey !=
+              metadata.parentRatingKey) {
         menuActions.add(
           _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
@@ -284,9 +297,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
-            icon: Symbols.delete_rounded,
-            label: t.common.delete,
+            icon: Symbols.delete_forever_rounded,
+            label: t.mediaMenu.deleteFromServer,
             hoverColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -300,6 +314,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (useBottomSheet) {
       selected = await OverlaySheetController.showAdaptive<String>(
         context,
+        showDragHandle: true,
         builder: (context) => _FocusableContextMenuSheet(
           title: widget.item.title,
           actions: menuActions,
@@ -422,7 +437,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           didNavigate = true;
           await _navigateToRelated(
             context,
-            metadata!.grandparentRatingKey,
+            metadata!.mediaType == PlexMediaType.season
+                ? metadata.parentRatingKey
+                : metadata.grandparentRatingKey,
             (metadata) => MediaDetailScreen(metadata: metadata),
             t.messages.errorLoadingSeries,
           );
@@ -560,7 +577,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await OverlaySheetController.showAdaptive(
           context,
           isScrollControlled: true,
-          backgroundColor: Colors.transparent,
           builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.title),
         );
       } else if (context.mounted) {
@@ -595,58 +611,27 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show submenu for Add to... (Playlist or Collection)
   Future<void> _showAddToSubmenu(BuildContext context) async {
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
-
     final submenuActions = [
       _MenuAction(value: 'playlist', icon: Symbols.playlist_play_rounded, label: t.playlists.playlist),
       _MenuAction(value: 'collection', icon: Symbols.collections_rounded, label: t.collections.collection),
     ];
 
-    String? selected;
-    if (useBottomSheet) {
-      selected = await OverlaySheetController.pushAdaptive<String>(
-        context,
-        builder: (context) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(t.common.addTo, style: Theme.of(context).textTheme.titleMedium),
-              ),
-              ...submenuActions.map((action) {
-                return ListTile(
-                  leading: AppIcon(action.icon, fill: 1),
-                  title: Text(action.label),
-                  onTap: () => OverlaySheetController.popAdaptive(context, action.value),
-                );
-              }),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      );
-    } else {
-      selected = await showMenu<String>(
-        context: context,
-        position: RelativeRect.fromLTRB(
-          _tapPosition?.dx ?? 0,
-          _tapPosition?.dy ?? 0,
-          _tapPosition?.dx ?? 0,
-          _tapPosition?.dy ?? 0,
-        ),
-        items: submenuActions.map((action) {
-          return PopupMenuItem<String>(
-            value: action.value,
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(t.common.addTo),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        children: submenuActions.map((action) {
+          return SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialogContext, action.value),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [AppIcon(action.icon, fill: 1, size: 20), const SizedBox(width: 12), Text(action.label)],
+              children: [AppIcon(action.icon, fill: 1, size: 24), const SizedBox(width: 16), Text(action.label, style: Theme.of(dialogContext).textTheme.bodyLarge)],
             ),
           );
         }).toList(),
-      );
-    }
+      ),
+    );
 
     // Handle the submenu selection
     if (selected == 'playlist' && context.mounted) {
@@ -823,7 +808,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // Create new collection flow
         final collectionName = await showTextInputDialog(
           context,
-          title: t.collections.createNewCollection,
+          title: t.common.createNew,
           labelText: t.collections.collectionName,
           hintText: t.collections.enterCollectionName,
         );
@@ -916,8 +901,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final currentStarValue = (metadata.userRating != null && metadata.userRating! > 0)
         ? metadata.userRating! / 2.0
         : 0.0;
-    await showModalBottomSheet(
-      context: context,
+    await OverlaySheetController.showAdaptive(
+      context,
+      showDragHandle: true,
       builder: (context) => RatingBottomSheet(
         currentRating: currentStarValue,
         onRate: (stars) async {
@@ -1137,8 +1123,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
-      title: t.common.delete,
-      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      title: t.mediaMenu.deleteFromServer,
+      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
+      confirmText: t.mediaMenu.deleteFromServer,
     );
 
     if (!confirmed || !context.mounted) return;
@@ -1195,7 +1182,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
               // Create new playlist option (always shown first)
               return ListTile(
                 leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                title: Text(t.playlists.createNewPlaylist),
+                title: Text(t.common.createNew),
                 onTap: () => Navigator.pop(context, '_create_new'),
               );
             }
@@ -1249,7 +1236,7 @@ class _CollectionSelectionDialog extends StatelessWidget {
               // Create new collection option (always shown first)
               return ListTile(
                 leading: const AppIcon(Symbols.add_rounded, fill: 1),
-                title: Text(t.collections.createNewCollection),
+                title: Text(t.common.createNew),
                 onTap: () => Navigator.pop(context, '_create_new'),
               );
             }
@@ -1308,7 +1295,7 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Text(
             widget.title,
             style: Theme.of(context).textTheme.titleMedium,
@@ -1325,11 +1312,13 @@ class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> 
                   final index = entry.key;
                   final action = entry.value;
                   return FocusableListTile(
-                    focusNode: index == 0 ? _initialFocusNode : null,
+                    focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
                     leading: AppIcon(action.icon, fill: 1),
                     title: Text(action.label),
                     onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
                     hoverColor: action.hoverColor,
+                    textColor: action.foregroundColor,
+                    iconColor: action.foregroundColor,
                   );
                 }),
               ],
@@ -1376,72 +1365,89 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
     final screenSize = MediaQuery.of(context).size;
     const menuWidth = 220.0;
 
-    // Calculate menu position, keeping it on screen
-    double left = widget.position.dx;
-    double top = widget.position.dy;
+    // Clamp menu position to stay within screen bounds
+    const edgePadding = 8.0;
+    final left = widget.position.dx.clamp(edgePadding, screenSize.width - menuWidth - edgePadding);
 
-    // Adjust if menu would go off right edge
-    if (left + menuWidth > screenSize.width) {
-      left = screenSize.width - menuWidth - 8;
-    }
-
-    // Estimate menu height and adjust if would go off bottom
     final estimatedHeight = widget.actions.length * 48.0 + 16;
-    if (top + estimatedHeight > screenSize.height) {
-      top = screenSize.height - estimatedHeight - 8;
+    final spaceBelow = screenSize.height - widget.position.dy - edgePadding;
+    final spaceAbove = widget.position.dy - edgePadding;
+
+    // Place menu above the click point if it doesn't fit below and there's more room above
+    final double top;
+    final double maxHeight;
+    if (estimatedHeight <= spaceBelow) {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
+    } else if (spaceAbove > spaceBelow) {
+      final menuHeight = estimatedHeight.clamp(0.0, spaceAbove);
+      top = widget.position.dy - menuHeight;
+      maxHeight = menuHeight;
+    } else {
+      top = widget.position.dy;
+      maxHeight = spaceBelow;
     }
 
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: (node, event) {
-        if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Stack(
-        children: [
-          // Barrier to close menu when clicking outside
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              behavior: HitTestBehavior.opaque,
-              child: Container(color: Colors.transparent),
+    return FocusScope(
+      // When opened via mouse, don't autofocus any item — let hover handle highlights.
+      // When opened via keyboard/dpad, autofocus is handled by _initialFocusNode.
+      autofocus: false,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onKeyEvent: (node, event) {
+          if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Stack(
+          children: [
+            // Barrier to close menu when clicking outside
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                behavior: HitTestBehavior.opaque,
+                child: Container(color: Colors.transparent),
+              ),
             ),
-          ),
-          // Menu
-          Positioned(
-            left: left,
-            top: top,
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: widget.actions.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final action = entry.value;
-                    return FocusableListTile(
-                      focusNode: index == 0 ? _initialFocusNode : null,
-                      leading: AppIcon(action.icon, fill: 1, size: 20),
-                      title: Text(action.label),
-                      onTap: () => Navigator.pop(context, action.value),
-                      hoverColor: action.hoverColor,
-                    );
-                  }).toList(),
+            // Menu
+            Positioned(
+              left: left,
+              top: top,
+              child: Material(
+                elevation: 8,
+                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: widget.actions.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final action = entry.value;
+                        return FocusableListTile(
+                          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+                          leading: AppIcon(action.icon, fill: 1, size: 20),
+                          title: Text(action.label),
+                          onTap: () => Navigator.pop(context, action.value),
+                          hoverColor: action.hoverColor,
+                          textColor: action.foregroundColor,
+                          iconColor: action.foregroundColor,
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

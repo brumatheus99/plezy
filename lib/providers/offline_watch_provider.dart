@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../models/plex_metadata.dart';
 import '../services/offline_watch_sync_service.dart';
-import '../services/plex_api_cache.dart';
 import '../utils/watch_state_notifier.dart';
 import 'download_provider.dart';
 import '../utils/global_key_utils.dart';
@@ -16,16 +15,12 @@ import '../utils/global_key_utils.dart';
 class OfflineWatchProvider extends ChangeNotifier {
   final OfflineWatchSyncService _syncService;
   final DownloadProvider _downloadProvider;
-  // ignore: unused_field - reserved for future cached metadata lookup
-  final PlexApiCache _apiCache;
 
   OfflineWatchProvider({
     required OfflineWatchSyncService syncService,
     required DownloadProvider downloadProvider,
-    required PlexApiCache apiCache,
   }) : _syncService = syncService,
-       _downloadProvider = downloadProvider,
-       _apiCache = apiCache {
+       _downloadProvider = downloadProvider {
     // Listen to sync service changes to update UI
     _syncService.addListener(_onSyncServiceChanged);
   }
@@ -99,7 +94,11 @@ class OfflineWatchProvider extends ChangeNotifier {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(showRatingKey);
     if (episodes.isEmpty) return episodes;
 
+    // Sort Season 0 (Specials) to the end so regular seasons play first
     episodes.sort((a, b) {
+      final aIsSpecial = (a.parentIndex ?? 0) == 0;
+      final bIsSpecial = (b.parentIndex ?? 0) == 0;
+      if (aIsSpecial != bIsSpecial) return aIsSpecial ? 1 : -1;
       final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
       if (seasonCompare != 0) return seasonCompare;
       return (a.index ?? 0).compareTo(b.index ?? 0);

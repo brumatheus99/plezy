@@ -32,6 +32,7 @@
     "delete": "Verwijderen",
     "shuffle": "Willekeurig",
     "addTo": "Toevoegen aan...",
+    "createNew": "Nieuw aanmaken",
     "remove": "Verwijderen",
     "paste": "Plakken",
     "connect": "Verbinden",
@@ -43,7 +44,7 @@
     "search": "Zoeken",
     "home": "Home",
     "back": "Terug",
-    "settings": "Instellingen",
+    "settings": "Opties",
     "mute": "Dempen",
     "ok": "OK",
     "loading": "Laden...",
@@ -52,13 +53,18 @@
     "exitConfirmMessage": "Weet je zeker dat je wilt afsluiten?",
     "dontAskAgain": "Niet meer vragen",
     "exit": "Afsluiten",
-    "viewAll": "Alles weergeven"
+    "viewAll": "Alles weergeven",
+    "checkingNetwork": "Netwerk controleren...",
+    "refreshingServers": "Servers vernieuwen...",
+    "loadingServers": "Servers laden...",
+    "connectingToServers": "Verbinden met servers...",
+    "startingOfflineMode": "Offlinemodus starten..."
   },
   "screens": {
     "licenses": "Licenties",
     "switchProfile": "Wissel van profiel",
     "subtitleStyling": "Ondertitel opmaak",
-    "mpvConfig": "MPV-configuratie",
+    "mpvConfig": "mpv.conf",
     "logs": "Logbestanden"
   },
   "update": {
@@ -117,10 +123,12 @@
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "showUnwatchedCount": "Aantal ongekeken tonen",
     "showUnwatchedCountDescription": "Toon aantal ongekeken afleveringen bij series en seizoenen",
+    "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
+    "hideSpoilersDescription": "Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien",
     "playerBackend": "Speler backend",
     "exoPlayer": "ExoPlayer (Aanbevolen)",
     "exoPlayerDescription": "Android-native speler met betere hardware-ondersteuning",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Geavanceerde speler met meer functies en ASS-ondertitelondersteuning",
     "hardwareDecoding": "Hardware decodering",
     "hardwareDecodingDescription": "Gebruik hardware versnelling indien beschikbaar",
@@ -144,6 +152,8 @@
     "keyboardShortcutsDescription": "Pas toetsenbord sneltoetsen aan",
     "videoPlayerNavigation": "Videospeler navigatie",
     "videoPlayerNavigationDescription": "Gebruik pijltjestoetsen om door de videospeler bediening te navigeren",
+    "crashReporting": "Crashrapportage",
+    "crashReportingDescription": "Crashrapporten verzenden om de app te verbeteren",
     "debugLogging": "Debug logging",
     "debugLoggingDescription": "Schakel gedetailleerde logging in voor probleemoplossing",
     "viewLogs": "Bekijk logs",
@@ -190,12 +200,18 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
+    "autoPip": "Automatische beeld-in-beeld",
+    "autoPipDescription": "Automatisch beeld-in-beeld activeren bij het verlaten van de app tijdens afspelen",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Pas de schermverversingssnelheid aan op de video-inhoud, vermindert haperingen en bespaart batterij",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Vraag om profiel bij openen",
     "requireProfileSelectionOnOpenDescription": "Toon profielselectie telkens wanneer de app wordt geopend",
     "confirmExitOnBack": "Bevestigen voor afsluiten",
-    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten"
+    "confirmExitOnBackDescription": "Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten",
+    "showNavBarLabels": "Navigatiebalk labels tonen",
+    "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
@@ -266,8 +282,9 @@
     "goToSeason": "Ga naar seizoen",
     "shufflePlay": "Willekeurig afspelen",
     "fileInfo": "Bestand info",
-    "confirmDelete": "Weet je zeker dat je dit item van je bestandssysteem wilt verwijderen?",
-    "deleteMultipleWarning": "Meerdere items kunnen worden verwijderd.",
+    "deleteFromServer": "Verwijderen van server",
+    "confirmDelete": "Dit zal deze media en de bijbehorende bestanden permanent van je server verwijderen. Dit kan niet ongedaan worden gemaakt.",
+    "deleteMultipleWarning": "Dit omvat alle afleveringen en hun bestanden.",
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen"
@@ -323,6 +340,7 @@
     "settingsButton": "Video-instellingen",
     "audioTrackButton": "Audiosporen",
     "subtitlesButton": "Ondertitels",
+    "tracksButton": "Audio en ondertitels",
     "chaptersButton": "Hoofdstukken",
     "versionsButton": "Videoversies",
     "pipButton": "Beeld-in-beeld modus",
@@ -337,11 +355,14 @@
     "timelineSlider": "Videotijdlijn",
     "volumeSlider": "Volumeniveau",
     "endsAt": "Eindigt om ${time}",
+    "pipActive": "Afspelen in beeld-in-beeld",
     "pipFailed": "Beeld-in-beeld kon niet worden gestart",
     "pipErrors": {
       "androidVersion": "Vereist Android 8.0 of nieuwer",
+      "iosVersion": "Vereist iOS 15.0 of nieuwer",
       "permissionDisabled": "Beeld-in-beeld toestemming is uitgeschakeld. Schakel deze in via Instellingen > Apps > Plezy > Beeld-in-beeld",
       "notSupported": "Dit apparaat ondersteunt geen beeld-in-beeld modus",
+      "voSwitchFailed": "Kan video-uitvoer niet wisselen voor beeld-in-beeld",
       "failed": "Beeld-in-beeld kon niet worden gestart",
       "unknown": "Er is een fout opgetreden: ${error}"
     },
@@ -402,19 +423,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "MPV-configuratie",
+    "title": "mpv-configuratie",
     "description": "Geavanceerde videospeler-instellingen",
-    "properties": "Eigenschappen",
     "presets": "Voorinstellingen",
-    "noProperties": "Geen eigenschappen geconfigureerd",
     "noPresets": "Geen opgeslagen voorinstellingen",
-    "addProperty": "Eigenschap toevoegen",
-    "editProperty": "Eigenschap bewerken",
-    "deleteProperty": "Eigenschap verwijderen",
-    "propertyKey": "Eigenschapssleutel",
-    "propertyKeyHint": "bijv. hwdec, demuxer-max-bytes",
-    "propertyValue": "Eigenschapswaarde",
-    "propertyValueHint": "bijv. auto, 256000000",
     "saveAsPreset": "Opslaan als voorinstelling...",
     "presetName": "Naam voorinstelling",
     "presetNameHint": "Voer een naam in voor deze voorinstelling",
@@ -424,8 +436,7 @@
     "presetLoaded": "Voorinstelling geladen",
     "presetDeleted": "Voorinstelling verwijderd",
     "confirmDeletePreset": "Weet je zeker dat je deze voorinstelling wilt verwijderen?",
-    "confirmDeleteProperty": "Weet je zeker dat je deze eigenschap wilt verwijderen?",
-    "entriesCount": "${count} items"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Bevestig actie"
@@ -547,7 +558,7 @@
     "licensesCount": "${count} licenties"
   },
   "navigation": {
-    "libraries": "Bibliotheken",
+    "libraries": "Media",
     "downloads": "Downloads",
     "liveTv": "Live TV"
   },
@@ -617,7 +628,6 @@
     "itemAdded": "Toegevoegd aan afspeellijst",
     "itemRemoved": "Verwijderd uit afspeellijst",
     "selectPlaylist": "Selecteer afspeellijst",
-    "createNewPlaylist": "Nieuwe afspeellijst maken",
     "errorCreating": "Fout bij maken afspeellijst",
     "errorDeleting": "Fout bij verwijderen afspeellijst",
     "errorLoading": "Fout bij laden afspeellijsten",
@@ -638,7 +648,6 @@
     "deleteFailedWithError": "Collectie verwijderen mislukt: ${error}",
     "failedToLoadItems": "Collectie-items laden mislukt: ${error}",
     "selectCollection": "Selecteer collectie",
-    "createNewCollection": "Nieuwe collectie maken",
     "collectionName": "Collectienaam",
     "enterCollectionName": "Voer collectienaam in",
     "addedToCollection": "Toegevoegd aan collectie",
@@ -695,6 +704,10 @@
     "sessionCodeCopied": "Sessiecode gekopieerd naar klembord",
     "relayUnreachable": "De relayserver is niet bereikbaar. Dit kan worden veroorzaakt doordat je internetprovider de verbinding blokkeert. Je kunt het toch proberen, maar Watch Together werkt mogelijk niet.",
     "reconnectingToHost": "Opnieuw verbinden met host...",
+    "currentPlayback": "Huidige weergave",
+    "joinCurrentPlayback": "Deelnemen aan huidige weergave",
+    "joinCurrentPlaybackDescription": "Ga terug naar wat de host nu kijkt",
+    "failedToOpenCurrentPlayback": "Huidige weergave kon niet worden geopend",
     "participantJoined": "${name} is toegetreden",
     "participantLeft": "${name} heeft de sessie verlaten"
   },
@@ -704,7 +717,13 @@
     "nvscalerDescription": "NVIDIA-beeldschaling voor scherpere video",
     "qualityFast": "Snel",
     "qualityHQ": "Hoge kwaliteit",
-    "mode": "Modus"
+    "mode": "Modus",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",
@@ -732,11 +751,8 @@
       "minimize": "Minimaliseren"
     },
     "pairing": {
-      "recent": "Recent",
       "scan": "Scannen",
       "manual": "Handmatig",
-      "recentConnections": "Recente verbindingen",
-      "quickReconnect": "Snel opnieuw verbinden met eerder gekoppelde apparaten",
       "pairWithDesktop": "Koppelen met desktop",
       "enterSessionDetails": "Voer de sessiegegevens in die op je desktop-apparaat worden getoond",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +766,7 @@
       "cameraPermissionRequired": "Cameratoestemming is vereist om QR-codes te scannen.\nGeef cameratoegang in je apparaatinstellingen.",
       "cameraError": "Kan camera niet starten: ${error}",
       "scanInstruction": "Richt je camera op de QR-code die op je desktop wordt getoond",
-      "noRecentConnections": "Geen recente verbindingen",
-      "connectUsingManual": "Verbind met een apparaat via Handmatige invoer om te beginnen",
       "invalidQrCode": "Ongeldig QR-codeformaat",
-      "removeRecentConnection": "Recente verbinding verwijderen",
-      "removeConfirm": "\"${name}\" verwijderen uit recente verbindingen?",
       "validationHostRequired": "Voer een hostadres in",
       "validationHostFormat": "Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Voer een sessie-ID in",
@@ -763,8 +775,7 @@
       "validationPinLength": "PIN moet 6 cijfers zijn",
       "connectionTimedOut": "Verbinding verlopen. Controleer de sessie-ID en PIN.",
       "sessionNotFound": "Kan de sessie niet vinden. Controleer je gegevens.",
-      "failedToConnect": "Verbinden mislukt: ${error}",
-      "failedToLoadRecent": "Kan recente sessies niet laden: ${error}"
+      "failedToConnect": "Verbinden mislukt: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Wil je de verbinding met de externe sessie verbreken?",
@@ -806,7 +817,9 @@
     "subtitleSync": "Ondertitel synchronisatie",
     "hdr": "HDR",
     "audioOutput": "Audio-uitvoer",
-    "performanceOverlay": "Prestatie-overlay"
+    "performanceOverlay": "Prestatie-overlay",
+    "audioPassthrough": "Audio-doorvoer",
+    "audioNormalization": "Audionormalisatie"
   },
   "externalPlayer": {
     "title": "Externe speler",

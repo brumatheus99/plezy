@@ -6,34 +6,19 @@ import 'dart:math';
 import 'package:web_socket_channel/io.dart';
 
 import '../../models/companion_remote/remote_command.dart';
-import '../../models/companion_remote/remote_command_type.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
+import '../base_peer_service.dart';
 
-enum RemotePeerErrorType {
-  connectionFailed,
-  peerDisconnected,
-  dataChannelError,
-  serverError,
-  timeout,
-  invalidSession,
-  authFailed,
-  networkError,
-  unknown,
-}
+// Re-export so callers that import from here get the types.
+export '../base_peer_service.dart' show PeerError, PeerErrorType;
 
-class RemotePeerError {
-  final RemotePeerErrorType type;
-  final String message;
-  final dynamic originalError;
+/// Backward-compatible aliases so existing callers that reference the
+/// Remote-specific names keep compiling.
+typedef RemotePeerErrorType = PeerErrorType;
+typedef RemotePeerError = PeerError;
 
-  const RemotePeerError({required this.type, required this.message, this.originalError});
-
-  @override
-  String toString() => 'RemotePeerError($type): $message';
-}
-
-class CompanionRemotePeerService {
+class CompanionRemotePeerService with KeepaliveMixin {
   // Server-side (host) fields
   HttpServer? _server;
   WebSocket? _clientSocket;
@@ -53,7 +38,11 @@ class CompanionRemotePeerService {
   final _errorController = StreamController<RemotePeerError>.broadcast();
   final _connectionStateController = StreamController<RemoteSessionStatus>.broadcast();
 
-  Timer? _pingTimer;
+  // Keepalive (via KeepaliveMixin)
+  @override
+  Duration get pingInterval => const Duration(seconds: 5);
+  @override
+  Duration get pongTimeout => Duration.zero; // No pong timeout; host just replies inline
 
   // Auth rate limiting
   int _failedAuthAttempts = 0;
@@ -292,7 +281,7 @@ class CompanionRemotePeerService {
           _clientSocket = null;
           _deviceDisconnectedController.add(null);
           _connectionStateController.add(RemoteSessionStatus.disconnected);
-          _stopPingTimer();
+          stopKeepalive();
         }
       },
       onError: (error) {
@@ -329,6 +318,7 @@ class CompanionRemotePeerService {
       _connectionStateController.add(RemoteSessionStatus.connecting);
 
       _channel = IOWebSocketChannel.connect(Uri.parse(url));
+      await _channel!.ready;
 
       // Send authentication message
       final authMessage = jsonEncode({
@@ -362,7 +352,7 @@ class CompanionRemotePeerService {
               sendDeviceInfo(deviceName, platform);
 
               // Start ping timer
-              _startPingTimer();
+              startKeepalive();
             } else if (messageType == 'authFailed') {
               final message = json['message'] as String? ?? 'Authentication failed';
               appLogger.w('CompanionRemote: $message');
@@ -396,7 +386,7 @@ class CompanionRemotePeerService {
           appLogger.d('CompanionRemote: Connection closed');
           _deviceDisconnectedController.add(null);
           _connectionStateController.add(RemoteSessionStatus.disconnected);
-          _stopPingTimer();
+          stopKeepalive();
           // Reconnection is handled by CompanionRemoteProvider
         },
         onError: (error) {
@@ -433,7 +423,9 @@ class CompanionRemotePeerService {
       onTimeout: () async {
         // Clean up channel on timeout
         if (_channel != null) {
-          await _channel!.sink.close();
+          try {
+            await _channel!.sink.close();
+          } catch (_) {}
           _channel = null;
         }
         throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out joining session');
@@ -529,18 +521,16 @@ class CompanionRemotePeerService {
     }
   }
 
-  void _startPingTimer() {
-    _stopPingTimer();
-    _pingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (isConnected) {
-        sendCommand(const RemoteCommand(type: RemoteCommandType.ping));
-      }
-    });
+  @override
+  void sendPing() {
+    if (isConnected) {
+      sendCommand(const RemoteCommand(type: RemoteCommandType.ping));
+    }
   }
 
-  void _stopPingTimer() {
-    _pingTimer?.cancel();
-    _pingTimer = null;
+  @override
+  void onPongTimeout() {
+    // Not used — pong timeout is disabled for companion remote.
   }
 
   bool _shouldSendAck(RemoteCommand command) {
@@ -595,15 +585,19 @@ class CompanionRemotePeerService {
   Future<void> disconnect() async {
     appLogger.d('CompanionRemote: Disconnecting');
 
-    _stopPingTimer();
+    stopKeepalive();
 
     if (_clientSocket != null) {
-      await _clientSocket!.close();
+      try {
+        await _clientSocket!.close();
+      } catch (_) {}
       _clientSocket = null;
     }
 
     if (_channel != null) {
-      await _channel!.sink.close();
+      try {
+        await _channel!.sink.close();
+      } catch (_) {}
       _channel = null;
     }
 

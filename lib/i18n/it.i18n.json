@@ -32,6 +32,7 @@
     "delete": "Elimina",
     "shuffle": "Casuale",
     "addTo": "Aggiungi a...",
+    "createNew": "Crea",
     "remove": "Rimuovi",
     "paste": "Incolla",
     "connect": "Connetti",
@@ -43,7 +44,7 @@
     "search": "Cerca",
     "home": "Home",
     "back": "Indietro",
-    "settings": "Impostazioni",
+    "settings": "Opzioni",
     "mute": "Muto",
     "ok": "OK",
     "loading": "Caricamento...",
@@ -52,13 +53,18 @@
     "exitConfirmMessage": "Sei sicuro di voler uscire?",
     "dontAskAgain": "Non chiedere più",
     "exit": "Esci",
-    "viewAll": "Mostra tutto"
+    "viewAll": "Mostra tutto",
+    "checkingNetwork": "Verifica rete...",
+    "refreshingServers": "Aggiornamento server...",
+    "loadingServers": "Caricamento server...",
+    "connectingToServers": "Connessione ai server...",
+    "startingOfflineMode": "Avvio modalità offline..."
   },
   "screens": {
     "licenses": "Licenze",
     "switchProfile": "Cambia profilo",
     "subtitleStyling": "Stile sottotitoli",
-    "mpvConfig": "Configurazione MPV",
+    "mpvConfig": "mpv.conf",
     "logs": "Registro"
   },
   "update": {
@@ -117,10 +123,12 @@
     "alwaysKeepSidebarOpenDescription": "La barra laterale rimane espansa e l'area del contenuto si adatta",
     "showUnwatchedCount": "Mostra conteggio non visti",
     "showUnwatchedCountDescription": "Mostra il numero di episodi non visti per serie e stagioni",
+    "hideSpoilers": "Nascondi spoiler per episodi non visti",
+    "hideSpoilersDescription": "Sfoca le miniature e nascondi le descrizioni degli episodi che non hai ancora guardato",
     "playerBackend": "Motore di riproduzione",
     "exoPlayer": "ExoPlayer (Consigliato)",
     "exoPlayerDescription": "Lettore nativo Android con migliore supporto hardware",
-    "mpv": "MPV",
+    "mpv": "mpv",
     "mpvDescription": "Lettore avanzato con più funzionalità e supporto sottotitoli ASS",
     "hardwareDecoding": "Decodifica Hardware",
     "hardwareDecodingDescription": "Utilizza l'accelerazione hardware quando disponibile",
@@ -144,6 +152,8 @@
     "keyboardShortcutsDescription": "Personalizza le scorciatoie da tastiera",
     "videoPlayerNavigation": "Navigazione del lettore video",
     "videoPlayerNavigationDescription": "Usa i tasti freccia per navigare nei controlli del lettore video",
+    "crashReporting": "Segnalazione errori",
+    "crashReportingDescription": "Invia segnalazioni di errori per migliorare l'app",
     "debugLogging": "Log di debug",
     "debugLoggingDescription": "Abilita il logging dettagliato per la risoluzione dei problemi",
     "viewLogs": "Visualizza log",
@@ -190,12 +200,18 @@
     "maxVolumePercent": "${percent}%",
     "discordRichPresence": "Discord Rich Presence",
     "discordRichPresenceDescription": "Mostra su Discord cosa stai guardando",
+    "autoPip": "Picture-in-Picture automatico",
+    "autoPipDescription": "Attiva automaticamente il picture-in-picture quando si esce dall'app durante la riproduzione",
     "matchContentFrameRate": "Adatta frequenza fotogrammi",
     "matchContentFrameRateDescription": "Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria",
+    "tunneledPlayback": "Tunneled Playback",
+    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
     "requireProfileSelectionOnOpen": "Chiedi profilo all'apertura",
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",
-    "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app"
+    "confirmExitOnBackDescription": "Mostra una finestra di conferma quando si preme indietro per uscire dall'app",
+    "showNavBarLabels": "Mostra etichette barra di navigazione",
+    "showNavBarLabelsDescription": "Mostra le etichette sotto le icone della barra di navigazione"
   },
   "search": {
     "hint": "Cerca film. spettacoli, musica...",
@@ -266,8 +282,9 @@
     "goToSeason": "Vai alla stagione",
     "shufflePlay": "Riproduzione casuale",
     "fileInfo": "Info sul file",
-    "confirmDelete": "Sei sicuro di voler eliminare questo elemento dal tuo filesystem?",
-    "deleteMultipleWarning": "Potrebbero essere eliminati più elementi.",
+    "deleteFromServer": "Elimina dal server",
+    "confirmDelete": "Questo eliminerà permanentemente questo contenuto e i suoi file dal tuo server. Questa azione non può essere annullata.",
+    "deleteMultipleWarning": "Questo include tutti gli episodi e i loro file.",
     "mediaDeletedSuccessfully": "Elemento multimediale eliminato con successo",
     "mediaFailedToDelete": "Impossibile eliminare l'elemento multimediale",
     "rate": "Valuta"
@@ -323,6 +340,7 @@
     "settingsButton": "Impostazioni video",
     "audioTrackButton": "Tracce audio",
     "subtitlesButton": "Sottotitoli",
+    "tracksButton": "Audio e sottotitoli",
     "chaptersButton": "Capitoli",
     "versionsButton": "Versioni video",
     "pipButton": "Modalità Picture-in-Picture",
@@ -337,11 +355,14 @@
     "timelineSlider": "Timeline video",
     "volumeSlider": "Livello volume",
     "endsAt": "Finisce alle ${time}",
+    "pipActive": "Riproduzione in Picture-in-Picture",
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
     "pipErrors": {
       "androidVersion": "Richiede Android 8.0 o versioni successive",
+      "iosVersion": "Richiede iOS 15.0 o versioni successive",
       "permissionDisabled": "L'autorizzazione Picture-in-Picture è disabilitata. Abilitala in Impostazioni > App > Plezy > Picture-in-Picture",
       "notSupported": "Questo dispositivo non supporta la modalità Picture-in-Picture",
+      "voSwitchFailed": "Impossibile cambiare l'uscita video per Picture-in-Picture",
       "failed": "Impossibile avviare la modalità Picture-in-Picture",
       "unknown": "Si è verificato un errore: ${error}"
     },
@@ -402,19 +423,10 @@
     "position": "Position"
   },
   "mpvConfig": {
-    "title": "Configurazione MPV",
+    "title": "Configurazione mpv",
     "description": "Impostazioni avanzate del lettore video",
-    "properties": "Proprietà",
     "presets": "Preset",
-    "noProperties": "Nessuna proprietà configurata",
     "noPresets": "Nessun preset salvato",
-    "addProperty": "Aggiungi proprietà",
-    "editProperty": "Modifica proprietà",
-    "deleteProperty": "Elimina proprietà",
-    "propertyKey": "Chiave proprietà",
-    "propertyKeyHint": "es. hwdec, demuxer-max-bytes",
-    "propertyValue": "Valore proprietà",
-    "propertyValueHint": "es. auto, 256000000",
     "saveAsPreset": "Salva come preset...",
     "presetName": "Nome preset",
     "presetNameHint": "Inserisci un nome per questo preset",
@@ -424,8 +436,7 @@
     "presetLoaded": "Preset caricato",
     "presetDeleted": "Preset eliminato",
     "confirmDeletePreset": "Sei sicuro di voler eliminare questo preset?",
-    "confirmDeleteProperty": "Sei sicuro di voler eliminare questa proprietà?",
-    "entriesCount": "${count} voci"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
   },
   "dialog": {
     "confirmAction": "Conferma azione"
@@ -549,7 +560,7 @@
   "navigation": {
     "libraries": "Librerie",
     "downloads": "Download",
-    "liveTv": "TV in diretta"
+    "liveTv": "TV Live"
   },
   "liveTv": {
     "title": "TV in diretta",
@@ -617,7 +628,6 @@
     "itemAdded": "Aggiunto alla playlist",
     "itemRemoved": "Rimosso dalla playlist",
     "selectPlaylist": "Seleziona playlist",
-    "createNewPlaylist": "Crea nuova playlist",
     "errorCreating": "Errore durante la creazione della playlist",
     "errorDeleting": "Errore durante l'eliminazione della playlist",
     "errorLoading": "Errore durante il caricamento delle playlist",
@@ -638,7 +648,6 @@
     "deleteFailedWithError": "Impossibile eliminare la raccolta: ${error}",
     "failedToLoadItems": "Impossibile caricare gli elementi della raccolta: ${error}",
     "selectCollection": "Seleziona raccolta",
-    "createNewCollection": "Crea nuova raccolta",
     "collectionName": "Nome raccolta",
     "enterCollectionName": "Inserisci nome raccolta",
     "addedToCollection": "Aggiunto alla raccolta",
@@ -695,6 +704,10 @@
     "sessionCodeCopied": "Codice sessione copiato negli appunti",
     "relayUnreachable": "Il server di inoltro non è raggiungibile. Questo potrebbe essere causato dal blocco della connessione da parte del tuo provider. Puoi comunque provare, ma Watch Together potrebbe non funzionare.",
     "reconnectingToHost": "Riconnessione all'host...",
+    "currentPlayback": "Riproduzione corrente",
+    "joinCurrentPlayback": "Unisciti alla riproduzione corrente",
+    "joinCurrentPlaybackDescription": "Torna a ciò che l'host sta guardando in questo momento",
+    "failedToOpenCurrentPlayback": "Impossibile aprire la riproduzione corrente",
     "participantJoined": "${name} si è unito",
     "participantLeft": "${name} se ne è andato"
   },
@@ -704,7 +717,13 @@
     "nvscalerDescription": "Ridimensionamento NVIDIA per video più nitido",
     "qualityFast": "Veloce",
     "qualityHQ": "Alta qualità",
-    "mode": "Modalità"
+    "mode": "Modalità",
+    "importShader": "Import Shader",
+    "customShaderDescription": "Custom GLSL shader",
+    "shaderImported": "Shader imported",
+    "shaderImportFailed": "Failed to import shader",
+    "deleteShader": "Delete Shader",
+    "deleteShaderConfirm": "Delete \"${name}\"?"
   },
   "companionRemote": {
     "title": "Companion Remote",
@@ -732,11 +751,8 @@
       "minimize": "Riduci"
     },
     "pairing": {
-      "recent": "Recenti",
       "scan": "Scansiona",
       "manual": "Manuale",
-      "recentConnections": "Connessioni recenti",
-      "quickReconnect": "Riconnettiti rapidamente ai dispositivi associati in precedenza",
       "pairWithDesktop": "Associa con desktop",
       "enterSessionDetails": "Inserisci i dettagli della sessione mostrati sul tuo dispositivo desktop",
       "hostAddressHint": "192.168.1.100:48632",
@@ -750,11 +766,7 @@
       "cameraPermissionRequired": "L'autorizzazione della fotocamera è necessaria per scansionare i QR code.\nConcedi l'accesso alla fotocamera nelle impostazioni del dispositivo.",
       "cameraError": "Impossibile avviare la fotocamera: ${error}",
       "scanInstruction": "Punta la fotocamera verso il QR code mostrato sul tuo desktop",
-      "noRecentConnections": "Nessuna connessione recente",
-      "connectUsingManual": "Connettiti a un dispositivo tramite inserimento manuale per iniziare",
       "invalidQrCode": "Formato QR code non valido",
-      "removeRecentConnection": "Rimuovi connessione recente",
-      "removeConfirm": "Rimuovere \"${name}\" dalle connessioni recenti?",
       "validationHostRequired": "Inserisci l'indirizzo host",
       "validationHostFormat": "Il formato deve essere IP:porta (es. 192.168.1.100:48632)",
       "validationSessionIdRequired": "Inserisci un ID sessione",
@@ -763,8 +775,7 @@
       "validationPinLength": "Il PIN deve essere di 6 cifre",
       "connectionTimedOut": "Connessione scaduta. Verifica l'ID sessione e il PIN.",
       "sessionNotFound": "Sessione non trovata. Verifica le tue credenziali.",
-      "failedToConnect": "Connessione fallita: ${error}",
-      "failedToLoadRecent": "Impossibile caricare le sessioni recenti: ${error}"
+      "failedToConnect": "Connessione fallita: ${error}"
     },
     "remote": {
       "disconnectConfirm": "Vuoi disconnetterti dalla sessione remota?",
@@ -806,7 +817,9 @@
     "subtitleSync": "Sincronizzazione sottotitoli",
     "hdr": "HDR",
     "audioOutput": "Uscita audio",
-    "performanceOverlay": "Overlay prestazioni"
+    "performanceOverlay": "Overlay prestazioni",
+    "audioPassthrough": "Audio Passthrough",
+    "audioNormalization": "Normalizzazione audio"
   },
   "externalPlayer": {
     "title": "Lettore esterno",

@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:isolate';
 import 'dart:math';
-import 'dart:ui' show VoidCallback;
+import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
 
@@ -32,10 +33,16 @@ import '../utils/plex_url_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import 'plex_api_cache.dart';
 
-/// Process hub JSON response in an isolate.
+/// Result of a paginated library content fetch
+class LibraryContentResult {
+  final List<PlexMetadata> items;
+  final int totalSize;
+  const LibraryContentResult({required this.items, required this.totalSize});
+}
+
+/// Process hub response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
-List<PlexHub> _processHubResponse(String jsonStr, String serverId, String? serverName) {
-  final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+List<PlexHub> _processHubResponse(Map<String, dynamic> decoded, String serverId, String? serverName) {
   final container = decoded['MediaContainer'] as Map<String, dynamic>?;
   if (container == null || container['Hub'] == null) return [];
 
@@ -72,16 +79,18 @@ List<PlexHub> _processHubResponse(String jsonStr, String serverId, String? serve
   return hubs;
 }
 
-/// Process on-deck JSON response in an isolate.
+/// Process on-deck response in an isolate.
 /// Top-level function so it can be passed to [Isolate.run].
-List<PlexMetadata> _processOnDeckResponse(String jsonStr, String serverId, String? serverName) {
-  final decoded = jsonDecode(jsonStr) as Map<String, dynamic>;
+List<PlexMetadata> _processOnDeckResponse(Map<String, dynamic> decoded, String serverId, String? serverName) {
   final container = decoded['MediaContainer'] as Map<String, dynamic>?;
   if (container == null || container['Metadata'] == null) return [];
 
   final allItems = (container['Metadata'] as List)
-      .map((json) => PlexMetadata.fromJsonWithImages(json as Map<String, dynamic>)
-          .copyWith(serverId: serverId, serverName: serverName))
+      .map(
+        (json) => PlexMetadata.fromJsonWithImages(
+          json as Map<String, dynamic>,
+        ).copyWith(serverId: serverId, serverName: serverName),
+      )
       .toList();
 
   return allItems.where((item) => !item.isMusicContent).toList();
@@ -101,6 +110,11 @@ class ConnectionTestResult {
   final String? error;
 
   ConnectionTestResult({required this.success, required this.latencyMs, this.error});
+}
+
+// Top-level function required by compute()
+String _decodeUtf8(List<int> bytes) {
+  return utf8.decode(bytes, allowMalformed: true);
 }
 
 class PlexClient {
@@ -130,8 +144,16 @@ class PlexClient {
   /// Get current offline mode state
   bool get isOfflineMode => _offlineMode;
 
-  /// Custom response decoder that handles malformed UTF-8 gracefully
-  static String _lenientUtf8Decoder(List<int> responseBytes, RequestOptions _, ResponseBody _) {
+  /// Custom response decoder that handles malformed UTF-8 gracefully.
+  /// Large responses are decoded in a background isolate to avoid ANR.
+  static FutureOr<String> _lenientUtf8Decoder(
+    List<int> responseBytes,
+    RequestOptions requestOptions,
+    ResponseBody responseBody,
+  ) {
+    if (responseBytes.length > 50 * 1024) {
+      return compute(_decodeUtf8, responseBytes);
+    }
     return utf8.decode(responseBytes, allowMalformed: true);
   }
 
@@ -162,6 +184,7 @@ class PlexClient {
         responseDecoder: _lenientUtf8Decoder,
       ),
     );
+    _dio.transformer = BackgroundTransformer();
 
     // Add interceptor for logging (optional, can be disabled in production)
     _dio.interceptors.add(
@@ -208,6 +231,7 @@ class PlexClient {
     String baseUrl,
     String token, {
     Duration timeout = const Duration(seconds: 5),
+    String? clientIdentifier,
   }) async {
     final stopwatch = Stopwatch()..start();
 
@@ -223,10 +247,17 @@ class PlexClient {
         ),
       );
 
-      final response = await dio.get('/', options: Options(headers: {'X-Plex-Token': token}));
+      final headers = <String, String>{'X-Plex-Token': token};
+      if (clientIdentifier != null) {
+        headers['X-Plex-Client-Identifier'] = clientIdentifier;
+        headers['X-Plex-Product'] = 'Plezy';
+        headers['X-Plex-Device-Name'] = 'Plezy';
+      }
+
+      final response = await dio.get('/', options: Options(headers: headers));
 
       stopwatch.stop();
-      final success = response.statusCode == 200 || response.statusCode == 401;
+      final success = response.statusCode == 200;
 
       return ConnectionTestResult(
         success: success,
@@ -259,11 +290,17 @@ class PlexClient {
     String token, {
     int attempts = 3,
     Duration timeout = const Duration(seconds: 5),
+    String? clientIdentifier,
   }) async {
     final results = <ConnectionTestResult>[];
 
     for (int i = 0; i < attempts; i++) {
-      final result = await testConnectionWithLatency(baseUrl, token, timeout: timeout);
+      final result = await testConnectionWithLatency(
+        baseUrl,
+        token,
+        timeout: timeout,
+        clientIdentifier: clientIdentifier,
+      );
 
       // If any attempt fails, return failed result immediately
       if (!result.success) {
@@ -364,6 +401,17 @@ class PlexClient {
     return response.data;
   }
 
+  /// Check if the server connection is healthy (reachable AND authenticated).
+  /// Returns true only if the server responds with HTTP 200.
+  Future<bool> isHealthy() async {
+    try {
+      final response = await _dio.get('/identity');
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// Get library sections
   /// Returns libraries automatically tagged with this client's serverId and serverName
   Future<List<PlexLibrary>> getLibraries() async {
@@ -372,7 +420,7 @@ class PlexClient {
   }
 
   /// Get library content by section ID
-  Future<List<PlexMetadata>> getLibraryContent(
+  Future<LibraryContentResult> getLibraryContent(
     String sectionId, {
     int? start,
     int? size,
@@ -394,7 +442,11 @@ class PlexClient {
       cancelToken: cancelToken,
     );
 
-    return _extractMetadataList(response);
+    final items = _extractMetadataList(response);
+    final container = _getMediaContainer(response);
+    final totalSize = container?['totalSize'] as int? ?? container?['size'] as int? ?? items.length;
+
+    return LibraryContentResult(items: items, totalSize: totalSize);
   }
 
   /// Parse list of PlexMetadata from a cached response
@@ -809,23 +861,10 @@ class PlexClient {
 
   /// Get on deck items (continue watching, filtered to video content only)
   Future<List<PlexMetadata>> getOnDeck() async {
-    final response = await _dio.get(
-      '/library/onDeck',
-      options: Options(responseType: ResponseType.plain),
-    );
+    final response = await _dio.get('/library/onDeck');
     final sid = serverId;
     final sname = serverName;
-    return Isolate.run(() => _processOnDeckResponse(response.data as String, sid, sname));
-  }
-
-  /// Get on deck items filtered by a specific library section
-  Future<List<PlexMetadata>> getOnDeckForLibrary(String sectionId) async {
-    final allOnDeck = await getOnDeck();
-
-    // Filter items to only include those from the specified library section
-    return allOnDeck.where((item) {
-      return item.librarySectionID == int.tryParse(sectionId);
-    }).toList();
+    return Isolate.run(() => _processOnDeckResponse(response.data as Map<String, dynamic>, sid, sname));
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
@@ -896,17 +935,20 @@ class PlexClient {
     return '${config.baseUrl}/$path'.withPlexToken(config.token);
   }
 
-  /// Check whether thumbnail previews are available for a given part.
-  /// Returns true if the server responds with 200 to the first thumbnail.
-  Future<bool> checkThumbnailsAvailable(int partId) async {
+  /// Download the full BIF (Base Index Frames) file for a given part.
+  /// Returns the raw bytes, or null on failure.
+  Future<Uint8List?> downloadBifFile(int partId) async {
     try {
-      final response = await _dio.get(
-        '/library/parts/$partId/indexes/sd/0',
-        options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 5)),
+      final response = await _dio.get<List<int>>(
+        '/library/parts/$partId/indexes/sd',
+        options: Options(responseType: ResponseType.bytes, receiveTimeout: const Duration(seconds: 30)),
       );
-      return response.statusCode == 200;
+      if (response.statusCode == 200 && response.data != null) {
+        return Uint8List.fromList(response.data!);
+      }
+      return null;
     } catch (_) {
-      return false;
+      return null;
     }
   }
 
@@ -999,7 +1041,7 @@ class PlexClient {
   Future<PlexVideoPlaybackData> getVideoPlaybackData(String ratingKey, {int mediaIndex = 0}) async {
     Map<String, dynamic>? data;
     try {
-      data = await _fetchWithCacheFirst<Map<String, dynamic>>(
+      data = await _fetchWithCacheFallback<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
         networkCall: () =>
             _dio.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
@@ -1161,11 +1203,10 @@ class PlexClient {
   /// Pass -1 to clear an existing rating
   Future<bool> rateItem(String ratingKey, double rating) {
     return _wrapBoolApiCall(
-      () => _dio.put('/:/rate', queryParameters: {
-        'key': ratingKey,
-        'identifier': 'com.plexapp.plugins.library',
-        'rating': rating,
-      }),
+      () => _dio.put(
+        '/:/rate',
+        queryParameters: {'key': ratingKey, 'identifier': 'com.plexapp.plugins.library', 'rating': rating},
+      ),
       'Failed to rate item',
     );
   }
@@ -1285,11 +1326,10 @@ class PlexClient {
       final response = await _dio.get(
         '/hubs/sections/$sectionId',
         queryParameters: {'count': limit, 'includeGuids': 1},
-        options: Options(responseType: ResponseType.plain),
       );
       final sid = serverId;
       final sname = serverName;
-      return Isolate.run(() => _processHubResponse(response.data as String, sid, sname));
+      return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1301,14 +1341,10 @@ class PlexClient {
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHub>> getGlobalHubs({int limit = 10}) async {
     try {
-      final response = await _dio.get(
-        '/hubs',
-        queryParameters: {'count': limit, 'includeGuids': 1},
-        options: Options(responseType: ResponseType.plain),
-      );
+      final response = await _dio.get('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
       final sid = serverId;
       final sname = serverName;
-      return Isolate.run(() => _processHubResponse(response.data as String, sid, sname));
+      return Isolate.run(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
     }
@@ -1511,10 +1547,7 @@ class PlexClient {
     String? tagline,
     String? summary,
   }) {
-    final queryParams = <String, dynamic>{
-      'type': typeNumber,
-      'id': ratingKey,
-    };
+    final queryParams = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
 
     void addField(String name, String? value) {
       if (value != null) {
@@ -1555,19 +1588,21 @@ class PlexClient {
 
   /// Set artwork from a URL (can be a Plex internal path or external URL)
   Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) {
+    final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
     return _wrapBoolApiCall(
-      () => _dio.post('/library/metadata/$ratingKey/$element', queryParameters: {'url': url}),
+      () => _dio.put('/library/metadata/$ratingKey/$setElement', queryParameters: {'url': url}),
       'Failed to set artwork from URL',
     );
   }
 
   /// Upload artwork from binary data
   Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) {
+    final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
     return _wrapBoolApiCall(
-      () => _dio.post(
-        '/library/metadata/$ratingKey/$element',
+      () => _dio.put(
+        '/library/metadata/$ratingKey/$setElement',
         data: bytes,
-        options: Options(headers: {'Content-Length': bytes.length}),
+        options: Options(headers: {'Content-Length': bytes.length}, contentType: 'application/octet-stream'),
       ),
       'Failed to upload artwork',
     );

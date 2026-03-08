@@ -190,6 +190,9 @@ class TranslationsCommonEn {
 	/// en: 'Add to...'
 	String get addTo => 'Add to...';
 
+	/// en: 'Create new'
+	String get createNew => 'Create new';
+
 	/// en: 'Remove'
 	String get remove => 'Remove';
 
@@ -252,6 +255,21 @@ class TranslationsCommonEn {
 
 	/// en: 'View All'
 	String get viewAll => 'View All';
+
+	/// en: 'Checking network...'
+	String get checkingNetwork => 'Checking network...';
+
+	/// en: 'Refreshing servers...'
+	String get refreshingServers => 'Refreshing servers...';
+
+	/// en: 'Loading servers...'
+	String get loadingServers => 'Loading servers...';
+
+	/// en: 'Connecting to servers...'
+	String get connectingToServers => 'Connecting to servers...';
+
+	/// en: 'Starting offline mode...'
+	String get startingOfflineMode => 'Starting offline mode...';
 }
 
 // Path: screens
@@ -271,8 +289,8 @@ class TranslationsScreensEn {
 	/// en: 'Subtitle Styling'
 	String get subtitleStyling => 'Subtitle Styling';
 
-	/// en: 'MPV Configuration'
-	String get mpvConfig => 'MPV Configuration';
+	/// en: 'mpv.conf'
+	String get mpvConfig => 'mpv.conf';
 
 	/// en: 'Logs'
 	String get logs => 'Logs';
@@ -454,6 +472,12 @@ class TranslationsSettingsEn {
 	/// en: 'Display unwatched episode count on shows and seasons'
 	String get showUnwatchedCountDescription => 'Display unwatched episode count on shows and seasons';
 
+	/// en: 'Hide Spoilers for Unwatched Episodes'
+	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
+
+	/// en: 'Blur thumbnails and hide descriptions for episodes you haven't watched yet'
+	String get hideSpoilersDescription => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet';
+
 	/// en: 'Player Backend'
 	String get playerBackend => 'Player Backend';
 
@@ -463,8 +487,8 @@ class TranslationsSettingsEn {
 	/// en: 'Android native player with better hardware support'
 	String get exoPlayerDescription => 'Android native player with better hardware support';
 
-	/// en: 'MPV'
-	String get mpv => 'MPV';
+	/// en: 'mpv'
+	String get mpv => 'mpv';
 
 	/// en: 'Advanced player with more features and ASS subtitle support'
 	String get mpvDescription => 'Advanced player with more features and ASS subtitle support';
@@ -534,6 +558,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Use arrow keys to navigate video player controls'
 	String get videoPlayerNavigationDescription => 'Use arrow keys to navigate video player controls';
+
+	/// en: 'Crash Reporting'
+	String get crashReporting => 'Crash Reporting';
+
+	/// en: 'Send crash reports to help improve the app'
+	String get crashReportingDescription => 'Send crash reports to help improve the app';
 
 	/// en: 'Debug Logging'
 	String get debugLogging => 'Debug Logging';
@@ -673,11 +703,23 @@ class TranslationsSettingsEn {
 	/// en: 'Show what you're watching on Discord'
 	String get discordRichPresenceDescription => 'Show what you\'re watching on Discord';
 
+	/// en: 'Auto Picture-in-Picture'
+	String get autoPip => 'Auto Picture-in-Picture';
+
+	/// en: 'Automatically enter picture-in-picture when leaving the app during playback'
+	String get autoPipDescription => 'Automatically enter picture-in-picture when leaving the app during playback';
+
 	/// en: 'Match Content Frame Rate'
 	String get matchContentFrameRate => 'Match Content Frame Rate';
 
 	/// en: 'Adjust display refresh rate to match video content, reducing judder and saving battery'
 	String get matchContentFrameRateDescription => 'Adjust display refresh rate to match video content, reducing judder and saving battery';
+
+	/// en: 'Tunneled Playback'
+	String get tunneledPlayback => 'Tunneled Playback';
+
+	/// en: 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content'
+	String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
@@ -690,6 +732,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show a confirmation dialog when pressing back to exit the app'
 	String get confirmExitOnBackDescription => 'Show a confirmation dialog when pressing back to exit the app';
+
+	/// en: 'Show Navigation Bar Labels'
+	String get showNavBarLabels => 'Show Navigation Bar Labels';
+
+	/// en: 'Display text labels under navigation bar icons'
+	String get showNavBarLabelsDescription => 'Display text labels under navigation bar icons';
 }
 
 // Path: search
@@ -855,11 +903,14 @@ class TranslationsMediaMenuEn {
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
 
-	/// en: 'Are you sure you want to delete this item from your filesystem?'
-	String get confirmDelete => 'Are you sure you want to delete this item from your filesystem?';
+	/// en: 'Delete from server'
+	String get deleteFromServer => 'Delete from server';
 
-	/// en: 'Multiple items may be deleted.'
-	String get deleteMultipleWarning => 'Multiple items may be deleted.';
+	/// en: 'This will permanently delete this media and its files from your server. This cannot be undone.'
+	String get confirmDelete => 'This will permanently delete this media and its files from your server. This cannot be undone.';
+
+	/// en: 'This includes all episodes and their files.'
+	String get deleteMultipleWarning => 'This includes all episodes and their files.';
 
 	/// en: 'Media item deleted successfully'
 	String get mediaDeletedSuccessfully => 'Media item deleted successfully';
@@ -1035,6 +1086,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Subtitles'
 	String get subtitlesButton => 'Subtitles';
 
+	/// en: 'Audio & Subtitles'
+	String get tracksButton => 'Audio & Subtitles';
+
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
@@ -1076,6 +1130,9 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Ends at ${time}'
 	String endsAt({required Object time}) => 'Ends at ${time}';
+
+	/// en: 'Playing in Picture-in-Picture'
+	String get pipActive => 'Playing in Picture-in-Picture';
 
 	/// en: 'Picture-in-picture failed to start'
 	String get pipFailed => 'Picture-in-picture failed to start';
@@ -1265,44 +1322,17 @@ class TranslationsMpvConfigEn {
 
 	// Translations
 
-	/// en: 'MPV Configuration'
-	String get title => 'MPV Configuration';
+	/// en: 'mpv.conf'
+	String get title => 'mpv.conf';
 
 	/// en: 'Advanced video player settings'
 	String get description => 'Advanced video player settings';
 
-	/// en: 'Properties'
-	String get properties => 'Properties';
-
 	/// en: 'Presets'
 	String get presets => 'Presets';
 
-	/// en: 'No properties configured'
-	String get noProperties => 'No properties configured';
-
 	/// en: 'No saved presets'
 	String get noPresets => 'No saved presets';
-
-	/// en: 'Add Property'
-	String get addProperty => 'Add Property';
-
-	/// en: 'Edit Property'
-	String get editProperty => 'Edit Property';
-
-	/// en: 'Delete Property'
-	String get deleteProperty => 'Delete Property';
-
-	/// en: 'Property Key'
-	String get propertyKey => 'Property Key';
-
-	/// en: 'e.g., hwdec, demuxer-max-bytes'
-	String get propertyKeyHint => 'e.g., hwdec, demuxer-max-bytes';
-
-	/// en: 'Property Value'
-	String get propertyValue => 'Property Value';
-
-	/// en: 'e.g., auto, 256000000'
-	String get propertyValueHint => 'e.g., auto, 256000000';
 
 	/// en: 'Save as Preset...'
 	String get saveAsPreset => 'Save as Preset...';
@@ -1331,11 +1361,8 @@ class TranslationsMpvConfigEn {
 	/// en: 'Are you sure you want to delete this preset?'
 	String get confirmDeletePreset => 'Are you sure you want to delete this preset?';
 
-	/// en: 'Are you sure you want to delete this property?'
-	String get confirmDeleteProperty => 'Are you sure you want to delete this property?';
-
-	/// en: '${count} entries'
-	String entriesCount({required Object count}) => '${count} entries';
+	/// en: 'gpu-api=vulkan hwdec=auto # comment'
+	String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -1826,9 +1853,6 @@ class TranslationsCollectionsEn {
 	/// en: 'Select Collection'
 	String get selectCollection => 'Select Collection';
 
-	/// en: 'Create New Collection'
-	String get createNewCollection => 'Create New Collection';
-
 	/// en: 'Collection Name'
 	String get collectionName => 'Collection Name';
 
@@ -1924,9 +1948,6 @@ class TranslationsPlaylistsEn {
 
 	/// en: 'Select Playlist'
 	String get selectPlaylist => 'Select Playlist';
-
-	/// en: 'Create New Playlist'
-	String get createNewPlaylist => 'Create New Playlist';
 
 	/// en: 'Failed to create playlist'
 	String get errorCreating => 'Failed to create playlist';
@@ -2087,6 +2108,18 @@ class TranslationsWatchTogetherEn {
 	/// en: 'Reconnecting to host...'
 	String get reconnectingToHost => 'Reconnecting to host...';
 
+	/// en: 'Current Playback'
+	String get currentPlayback => 'Current Playback';
+
+	/// en: 'Join Current Playback'
+	String get joinCurrentPlayback => 'Join Current Playback';
+
+	/// en: 'Jump back into what the host is currently watching'
+	String get joinCurrentPlaybackDescription => 'Jump back into what the host is currently watching';
+
+	/// en: 'Failed to open current playback'
+	String get failedToOpenCurrentPlayback => 'Failed to open current playback';
+
 	/// en: '${name} joined'
 	String participantJoined({required Object name}) => '${name} joined';
 
@@ -2182,6 +2215,24 @@ class TranslationsShadersEn {
 
 	/// en: 'Mode'
 	String get mode => 'Mode';
+
+	/// en: 'Import Shader'
+	String get importShader => 'Import Shader';
+
+	/// en: 'Custom GLSL shader'
+	String get customShaderDescription => 'Custom GLSL shader';
+
+	/// en: 'Shader imported'
+	String get shaderImported => 'Shader imported';
+
+	/// en: 'Failed to import shader'
+	String get shaderImportFailed => 'Failed to import shader';
+
+	/// en: 'Delete Shader'
+	String get deleteShader => 'Delete Shader';
+
+	/// en: 'Delete "${name}"?'
+	String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -2249,6 +2300,12 @@ class TranslationsVideoSettingsEn {
 
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
+
+	/// en: 'Audio Passthrough'
+	String get audioPassthrough => 'Audio Passthrough';
+
+	/// en: 'Audio Normalization'
+	String get audioNormalization => 'Audio Normalization';
 }
 
 // Path: externalPlayer
@@ -2568,11 +2625,17 @@ class TranslationsVideoControlsPipErrorsEn {
 	/// en: 'Requires Android 8.0 or newer'
 	String get androidVersion => 'Requires Android 8.0 or newer';
 
+	/// en: 'Requires iOS 15.0 or newer'
+	String get iosVersion => 'Requires iOS 15.0 or newer';
+
 	/// en: 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture'
 	String get permissionDisabled => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture';
 
 	/// en: 'Device doesn't support picture-in-picture mode'
 	String get notSupported => 'Device doesn\'t support picture-in-picture mode';
+
+	/// en: 'Failed to switch video output for picture-in-picture'
+	String get voSwitchFailed => 'Failed to switch video output for picture-in-picture';
 
 	/// en: 'Picture-in-picture failed to start'
 	String get failed => 'Picture-in-picture failed to start';
@@ -2691,20 +2754,11 @@ class TranslationsCompanionRemotePairingEn {
 
 	// Translations
 
-	/// en: 'Recent'
-	String get recent => 'Recent';
-
 	/// en: 'Scan'
 	String get scan => 'Scan';
 
 	/// en: 'Manual'
 	String get manual => 'Manual';
-
-	/// en: 'Recent Connections'
-	String get recentConnections => 'Recent Connections';
-
-	/// en: 'Quickly reconnect to previously paired devices'
-	String get quickReconnect => 'Quickly reconnect to previously paired devices';
 
 	/// en: 'Pair with Desktop'
 	String get pairWithDesktop => 'Pair with Desktop';
@@ -2745,20 +2799,8 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'Point your camera at the QR code shown on your desktop'
 	String get scanInstruction => 'Point your camera at the QR code shown on your desktop';
 
-	/// en: 'No recent connections'
-	String get noRecentConnections => 'No recent connections';
-
-	/// en: 'Connect to a device using Manual entry to get started'
-	String get connectUsingManual => 'Connect to a device using Manual entry to get started';
-
 	/// en: 'Invalid QR code format'
 	String get invalidQrCode => 'Invalid QR code format';
-
-	/// en: 'Remove Recent Connection'
-	String get removeRecentConnection => 'Remove Recent Connection';
-
-	/// en: 'Remove "${name}" from recent connections?'
-	String removeConfirm({required Object name}) => 'Remove "${name}" from recent connections?';
 
 	/// en: 'Please enter host address'
 	String get validationHostRequired => 'Please enter host address';
@@ -2786,9 +2828,6 @@ class TranslationsCompanionRemotePairingEn {
 
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
-
-	/// en: 'Failed to load recent sessions: ${error}'
-	String failedToLoadRecent({required Object error}) => 'Failed to load recent sessions: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -2923,6 +2962,7 @@ extension on Translations {
 			'common.delete' => 'Delete',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
+			'common.createNew' => 'Create new',
 			'common.remove' => 'Remove',
 			'common.paste' => 'Paste',
 			'common.connect' => 'Connect',
@@ -2944,10 +2984,15 @@ extension on Translations {
 			'common.dontAskAgain' => 'Don\'t ask again',
 			'common.exit' => 'Exit',
 			'common.viewAll' => 'View All',
+			'common.checkingNetwork' => 'Checking network...',
+			'common.refreshingServers' => 'Refreshing servers...',
+			'common.loadingServers' => 'Loading servers...',
+			'common.connectingToServers' => 'Connecting to servers...',
+			'common.startingOfflineMode' => 'Starting offline mode...',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
-			'screens.mpvConfig' => 'MPV Configuration',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => 'Logs',
 			'update.available' => 'Update Available',
 			'update.versionAvailable' => ({required Object version}) => 'Version ${version} is available',
@@ -3002,10 +3047,12 @@ extension on Translations {
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
+			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
+			'settings.hideSpoilersDescription' => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet',
 			'settings.playerBackend' => 'Player Backend',
 			'settings.exoPlayer' => 'ExoPlayer (Recommended)',
 			'settings.exoPlayerDescription' => 'Android native player with better hardware support',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => 'Advanced player with more features and ASS subtitle support',
 			'settings.hardwareDecoding' => 'Hardware Decoding',
 			'settings.hardwareDecodingDescription' => 'Use hardware acceleration when available',
@@ -3029,6 +3076,8 @@ extension on Translations {
 			'settings.keyboardShortcutsDescription' => 'Customize keyboard shortcuts',
 			'settings.videoPlayerNavigation' => 'Video Player Navigation',
 			'settings.videoPlayerNavigationDescription' => 'Use arrow keys to navigate video player controls',
+			'settings.crashReporting' => 'Crash Reporting',
+			'settings.crashReportingDescription' => 'Send crash reports to help improve the app',
 			'settings.debugLogging' => 'Debug Logging',
 			'settings.debugLoggingDescription' => 'Enable detailed logging for troubleshooting',
 			'settings.viewLogs' => 'View Logs',
@@ -3075,12 +3124,18 @@ extension on Translations {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Show what you\'re watching on Discord',
+			'settings.autoPip' => 'Auto Picture-in-Picture',
+			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when leaving the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Adjust display refresh rate to match video content, reducing judder and saving battery',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.confirmExitOnBack' => 'Confirm before exiting',
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
+			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
+			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -3139,8 +3194,9 @@ extension on Translations {
 			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.fileInfo' => 'File Info',
-			'mediaMenu.confirmDelete' => 'Are you sure you want to delete this item from your filesystem?',
-			'mediaMenu.deleteMultipleWarning' => 'Multiple items may be deleted.',
+			'mediaMenu.deleteFromServer' => 'Delete from server',
+			'mediaMenu.confirmDelete' => 'This will permanently delete this media and its files from your server. This cannot be undone.',
+			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
@@ -3190,6 +3246,7 @@ extension on Translations {
 			'videoControls.settingsButton' => 'Video settings',
 			'videoControls.audioTrackButton' => 'Audio tracks',
 			'videoControls.subtitlesButton' => 'Subtitles',
+			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionsButton' => 'Video versions',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
@@ -3204,10 +3261,13 @@ extension on Translations {
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
+			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
+			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture permission is disabled. Enable it in Settings > Apps > Plezy > Picture-in-picture',
 			'videoControls.pipErrors.notSupported' => 'Device doesn\'t support picture-in-picture mode',
+			'videoControls.pipErrors.voSwitchFailed' => 'Failed to switch video output for picture-in-picture',
 			'videoControls.pipErrors.failed' => 'Picture-in-picture failed to start',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'An error occurred: ${error}',
 			'videoControls.chapters' => 'Chapters',
@@ -3259,19 +3319,10 @@ extension on Translations {
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV Configuration',
+			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
-			'mpvConfig.properties' => 'Properties',
 			'mpvConfig.presets' => 'Presets',
-			'mpvConfig.noProperties' => 'No properties configured',
 			'mpvConfig.noPresets' => 'No saved presets',
-			'mpvConfig.addProperty' => 'Add Property',
-			'mpvConfig.editProperty' => 'Edit Property',
-			'mpvConfig.deleteProperty' => 'Delete Property',
-			'mpvConfig.propertyKey' => 'Property Key',
-			'mpvConfig.propertyKeyHint' => 'e.g., hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => 'Property Value',
-			'mpvConfig.propertyValueHint' => 'e.g., auto, 256000000',
 			'mpvConfig.saveAsPreset' => 'Save as Preset...',
 			'mpvConfig.presetName' => 'Preset Name',
 			'mpvConfig.presetNameHint' => 'Enter a name for this preset',
@@ -3281,8 +3332,7 @@ extension on Translations {
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
-			'mpvConfig.confirmDeleteProperty' => 'Are you sure you want to delete this property?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} entries',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
@@ -3396,6 +3446,8 @@ extension on Translations {
 			'liveTv.live' => 'LIVE',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => 'NEW',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',
@@ -3407,8 +3459,6 @@ extension on Translations {
 			'liveTv.evening' => 'Evening',
 			'liveTv.lateNight' => 'Late Night',
 			'liveTv.whatsOn' => 'What\'s On',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
@@ -3421,7 +3471,6 @@ extension on Translations {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Failed to delete collection: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => 'Failed to load collection items: ${error}',
 			'collections.selectCollection' => 'Select Collection',
-			'collections.createNewCollection' => 'Create New Collection',
 			'collections.collectionName' => 'Collection Name',
 			'collections.enterCollectionName' => 'Enter collection name',
 			'collections.addedToCollection' => 'Added to collection',
@@ -3451,7 +3500,6 @@ extension on Translations {
 			'playlists.itemAdded' => 'Added to playlist',
 			'playlists.itemRemoved' => 'Removed from playlist',
 			'playlists.selectPlaylist' => 'Select Playlist',
-			'playlists.createNewPlaylist' => 'Create New Playlist',
 			'playlists.errorCreating' => 'Failed to create playlist',
 			'playlists.errorDeleting' => 'Failed to delete playlist',
 			'playlists.errorLoading' => 'Failed to load playlists',
@@ -3502,6 +3550,10 @@ extension on Translations {
 			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
 			'watchTogether.relayUnreachable' => 'The relay server is unreachable. This may be caused by your ISP blocking the connection. You can still try, but Watch Together may not work.',
 			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
+			'watchTogether.currentPlayback' => 'Current Playback',
+			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'downloads.title' => 'Downloads',
@@ -3528,6 +3580,12 @@ extension on Translations {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => 'Connect to Device',
 			'companionRemote.hostRemoteSession' => 'Host Remote Session',
@@ -3550,11 +3608,8 @@ extension on Translations {
 			'companionRemote.session.copyToClipboard' => 'Copy to clipboard',
 			'companionRemote.session.newSession' => 'New Session',
 			'companionRemote.session.minimize' => 'Minimize',
-			'companionRemote.pairing.recent' => 'Recent',
 			'companionRemote.pairing.scan' => 'Scan',
 			'companionRemote.pairing.manual' => 'Manual',
-			'companionRemote.pairing.recentConnections' => 'Recent Connections',
-			'companionRemote.pairing.quickReconnect' => 'Quickly reconnect to previously paired devices',
 			'companionRemote.pairing.pairWithDesktop' => 'Pair with Desktop',
 			'companionRemote.pairing.enterSessionDetails' => 'Enter the session details shown on your desktop device',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -3568,11 +3623,7 @@ extension on Translations {
 			'companionRemote.pairing.cameraPermissionRequired' => 'Camera permission is required to scan QR codes.\nPlease grant camera access in your device settings.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => 'Could not start camera: ${error}',
 			'companionRemote.pairing.scanInstruction' => 'Point your camera at the QR code shown on your desktop',
-			'companionRemote.pairing.noRecentConnections' => 'No recent connections',
-			'companionRemote.pairing.connectUsingManual' => 'Connect to a device using Manual entry to get started',
 			'companionRemote.pairing.invalidQrCode' => 'Invalid QR code format',
-			'companionRemote.pairing.removeRecentConnection' => 'Remove Recent Connection',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => 'Remove "${name}" from recent connections?',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => 'Please enter a session ID',
@@ -3582,7 +3633,6 @@ extension on Translations {
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Please check the session ID and PIN.',
 			'companionRemote.pairing.sessionNotFound' => 'Could not find the session. Please check your credentials.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => 'Failed to load recent sessions: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
@@ -3620,6 +3670,8 @@ extension on Translations {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
+			'videoSettings.audioPassthrough' => 'Audio Passthrough',
+			'videoSettings.audioNormalization' => 'Audio Normalization',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in an external app instead of the built-in player',

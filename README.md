@@ -26,6 +26,10 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
   brew tap edde746/plezy https://github.com/edde746/plezy
   brew install --cask plezy
   ```
+- **WinGet** (Windows):
+  ```bash
+  winget install edde746.plezy
+  ```
 
 ## Features
 
@@ -41,7 +45,7 @@ A modern Plex client for desktop and mobile. Built with Flutter for native perfo
 
 ### 🎬 Playback
 - Wide codec support (HEVC, AV1, VP9, and more)
-- HDR and Dolby Vision (iOS, macOS, Windows)
+- HDR and Dolby Vision (not Linux)
 - Full ASS/SSA subtitle support
 - Audio and subtitle preferences synced with Plex profile
 - Progress sync and resume

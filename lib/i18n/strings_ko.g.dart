@@ -130,6 +130,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get delete => '삭제';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
+	@override String get createNew => '새로 만들기';
 	@override String get remove => '삭제';
 	@override String get paste => '붙여넣기';
 	@override String get connect => '연결';
@@ -151,6 +152,11 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get dontAskAgain => '다시 묻지 않기';
 	@override String get exit => '종료';
 	@override String get viewAll => '모두 보기';
+	@override String get checkingNetwork => '네트워크 확인 중...';
+	@override String get refreshingServers => '서버 새로고침 중...';
+	@override String get loadingServers => '서버 로딩 중...';
+	@override String get connectingToServers => '서버 연결 중...';
+	@override String get startingOfflineMode => '오프라인 모드 시작 중...';
 }
 
 // Path: screens
@@ -163,7 +169,7 @@ class _TranslationsScreensKo implements TranslationsScreensEn {
 	@override String get licenses => '라이선스';
 	@override String get switchProfile => '프로필 전환';
 	@override String get subtitleStyling => '자막 스타일 설정';
-	@override String get mpvConfig => 'MPV 설정';
+	@override String get mpvConfig => 'mpv.conf';
 	@override String get logs => '로그';
 }
 
@@ -236,10 +242,12 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
 	@override String get showUnwatchedCountDescription => '시리즈 및 시즌에 미시청 에피소드 수 표시';
+	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
+	@override String get hideSpoilersDescription => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다';
 	@override String get playerBackend => '플레이어 백엔드';
 	@override String get exoPlayer => 'ExoPlayer (권장)';
 	@override String get exoPlayerDescription => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어';
-	@override String get mpv => 'MPV';
+	@override String get mpv => 'mpv';
 	@override String get mpvDescription => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어';
 	@override String get hardwareDecoding => '하드웨어 디코딩';
 	@override String get hardwareDecodingDescription => '가능한 경우 하드웨어 가속을 사용합니다';
@@ -263,6 +271,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get keyboardShortcutsDescription => '사용자 정의 키보드 단축키';
 	@override String get videoPlayerNavigation => '비디오 플레이어 탐색';
 	@override String get videoPlayerNavigationDescription => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색';
+	@override String get crashReporting => '충돌 보고';
+	@override String get crashReportingDescription => '앱 개선을 위해 충돌 보고서 전송';
 	@override String get debugLogging => '디버그 로깅';
 	@override String get debugLoggingDescription => '문제 해결을 위해 상세 로깅 활성화';
 	@override String get viewLogs => '로그 보기';
@@ -309,12 +319,18 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String maxVolumePercent({required Object percent}) => '${percent}%';
 	@override String get discordRichPresence => 'Discord Rich Presence';
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
+	@override String get autoPip => '자동 PIP 모드';
+	@override String get autoPipDescription => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환';
 	@override String get matchContentFrameRate => '콘텐츠 프레임 레이트 맞춤';
 	@override String get matchContentFrameRateDescription => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다';
+	@override String get tunneledPlayback => 'Tunneled Playback';
+	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get confirmExitOnBack => '종료 전 확인';
 	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
+	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
+	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
 }
 
 // Path: search
@@ -400,8 +416,9 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 	@override String get goToSeason => '시즌으로 이동';
 	@override String get shufflePlay => '무작위 재생';
 	@override String get fileInfo => '파일 정보';
-	@override String get confirmDelete => '파일 시스템에서 이 항목을 삭제하시겠습니까?';
-	@override String get deleteMultipleWarning => '여러 항목이 삭제될 수 있습니다.';
+	@override String get deleteFromServer => '서버에서 삭제';
+	@override String get confirmDelete => '이 미디어와 파일이 서버에서 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.';
+	@override String get deleteMultipleWarning => '모든 에피소드와 파일이 포함됩니다.';
 	@override String get mediaDeletedSuccessfully => '미디어 항목이 성공적으로 삭제되었습니다';
 	@override String get mediaFailedToDelete => '미디어 항목 삭제 실패';
 	@override String get rate => '평가';
@@ -478,6 +495,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get settingsButton => '동영상 설정';
 	@override String get audioTrackButton => '음원 트랙';
 	@override String get subtitlesButton => '자막';
+	@override String get tracksButton => '오디오 및 자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
 	@override String get pipButton => '픽처 인 픽처 모드';
@@ -492,6 +510,7 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 	@override String get timelineSlider => '타임라인';
 	@override String get volumeSlider => '볼륨 조절';
 	@override String endsAt({required Object time}) => '${time}에 종료';
+	@override String get pipActive => '화면 속 화면으로 재생 중';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
@@ -579,19 +598,10 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'MPV 설정';
+	@override String get title => 'mpv 설정';
 	@override String get description => '고급 비디오 플레이어 설정';
-	@override String get properties => '속성';
 	@override String get presets => '사전 설정';
-	@override String get noProperties => '설정된 속성이 없습니다';
 	@override String get noPresets => '저장된 사전 설정이 없습니다';
-	@override String get addProperty => '속성 추가';
-	@override String get editProperty => '속성 편집';
-	@override String get deleteProperty => '속성 삭제';
-	@override String get propertyKey => '속성 키';
-	@override String get propertyKeyHint => '예: hwdec, demuxer-max-bytes';
-	@override String get propertyValue => '속성값';
-	@override String get propertyValueHint => '예: auto, 256000000';
 	@override String get saveAsPreset => '프리셋으로 저장...';
 	@override String get presetName => '프리셋 이름';
 	@override String get presetNameHint => '이 프리셋의 이름을 입력하세요';
@@ -601,8 +611,7 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 	@override String get presetLoaded => '프리셋이 로드 되었습니다';
 	@override String get presetDeleted => '프리셋이 삭제 되었습니다';
 	@override String get confirmDeletePreset => '이 프리셋을 삭제 하시겠습니까?';
-	@override String get confirmDeleteProperty => '이 속성을 삭제 하시겠습니까?';
-	@override String entriesCount({required Object count}) => '${count} 항목';
+	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
 }
 
 // Path: dialog
@@ -839,7 +848,6 @@ class _TranslationsCollectionsKo implements TranslationsCollectionsEn {
 	@override String deleteFailedWithError({required Object error}) => '컬렉션 삭제 실패: ${error}';
 	@override String failedToLoadItems({required Object error}) => '컬렉션 항목 로드 실패: ${error}';
 	@override String get selectCollection => '컬렉션 선택';
-	@override String get createNewCollection => '새 컬렉션 생성';
 	@override String get collectionName => '컬렉션 이름';
 	@override String get enterCollectionName => '컬렉션 이름 입력';
 	@override String get addedToCollection => '컬렉션에 추가됨';
@@ -878,7 +886,6 @@ class _TranslationsPlaylistsKo implements TranslationsPlaylistsEn {
 	@override String get itemAdded => '재생 목록에 추가 되었습니다';
 	@override String get itemRemoved => '재생 목록에서 제거됨';
 	@override String get selectPlaylist => '재생 목록 선택';
-	@override String get createNewPlaylist => '새 재생 목록 생성';
 	@override String get errorCreating => '재생 목록 생성 실패';
 	@override String get errorDeleting => '재생 목록 삭제 실패';
 	@override String get errorLoading => '재생 목록 로드 실패';
@@ -938,6 +945,10 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get sessionCodeCopied => '세션 코드가 클립보드에 복사되었습니다';
 	@override String get relayUnreachable => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.';
 	@override String get reconnectingToHost => '호스트에 재연결 중...';
+	@override String get currentPlayback => '현재 재생';
+	@override String get joinCurrentPlayback => '현재 재생 참여';
+	@override String get joinCurrentPlaybackDescription => '호스트가 현재 보고 있는 항목으로 돌아갑니다';
+	@override String get failedToOpenCurrentPlayback => '현재 재생을 열 수 없습니다';
 	@override String participantJoined({required Object name}) => '${name}님이 참여했습니다';
 	@override String participantLeft({required Object name}) => '${name}님이 나갔습니다';
 }
@@ -982,6 +993,12 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
+	@override String get importShader => 'Import Shader';
+	@override String get customShaderDescription => 'Custom GLSL shader';
+	@override String get shaderImported => 'Shader imported';
+	@override String get shaderImportFailed => 'Failed to import shader';
+	@override String get deleteShader => 'Delete Shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
 }
 
 // Path: companionRemote
@@ -1018,6 +1035,8 @@ class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => '오디오 출력';
 	@override String get performanceOverlay => '성능 오버레이';
+	@override String get audioPassthrough => '오디오 패스스루';
+	@override String get audioNormalization => '오디오 정규화';
 }
 
 // Path: externalPlayer
@@ -1148,8 +1167,10 @@ class _TranslationsVideoControlsPipErrorsKo implements TranslationsVideoControls
 
 	// Translations
 	@override String get androidVersion => 'Android 8.0 이상이 필요합니다';
+	@override String get iosVersion => 'iOS 15.0 이상이 필요합니다';
 	@override String get permissionDisabled => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요';
 	@override String get notSupported => '이 기기는 화면 속 화면 모드를 지원하지 않습니다';
+	@override String get voSwitchFailed => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다';
 	@override String get failed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String unknown({required Object error}) => '오류가 발생했습니다: ${error}';
 }
@@ -1213,11 +1234,8 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get recent => '최근';
 	@override String get scan => '스캔';
 	@override String get manual => '수동';
-	@override String get recentConnections => '최근 연결';
-	@override String get quickReconnect => '이전에 페어링한 기기에 빠르게 재연결';
 	@override String get pairWithDesktop => '데스크톱과 페어링';
 	@override String get enterSessionDetails => '데스크톱 기기에 표시된 세션 정보를 입력하세요';
 	@override String get hostAddressHint => '192.168.1.100:48632';
@@ -1231,11 +1249,7 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	@override String get cameraPermissionRequired => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.';
 	@override String cameraError({required Object error}) => '카메라를 시작할 수 없습니다: ${error}';
 	@override String get scanInstruction => '데스크톱에 표시된 QR 코드에 카메라를 향하세요';
-	@override String get noRecentConnections => '최근 연결 없음';
-	@override String get connectUsingManual => '수동 입력으로 기기에 연결하여 시작하세요';
 	@override String get invalidQrCode => '유효하지 않은 QR 코드 형식';
-	@override String get removeRecentConnection => '최근 연결 삭제';
-	@override String removeConfirm({required Object name}) => '"${name}"을(를) 최근 연결에서 삭제하시겠습니까?';
 	@override String get validationHostRequired => '호스트 주소를 입력하세요';
 	@override String get validationHostFormat => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)';
 	@override String get validationSessionIdRequired => '세션 ID를 입력하세요';
@@ -1245,7 +1259,6 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.';
 	@override String get sessionNotFound => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.';
 	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
-	@override String failedToLoadRecent({required Object error}) => '최근 세션 로드 실패: ${error}';
 }
 
 // Path: companionRemote.remote
@@ -1322,6 +1335,7 @@ extension on TranslationsKo {
 			'common.delete' => '삭제',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
+			'common.createNew' => '새로 만들기',
 			'common.remove' => '삭제',
 			'common.paste' => '붙여넣기',
 			'common.connect' => '연결',
@@ -1343,10 +1357,15 @@ extension on TranslationsKo {
 			'common.dontAskAgain' => '다시 묻지 않기',
 			'common.exit' => '종료',
 			'common.viewAll' => '모두 보기',
+			'common.checkingNetwork' => '네트워크 확인 중...',
+			'common.refreshingServers' => '서버 새로고침 중...',
+			'common.loadingServers' => '서버 로딩 중...',
+			'common.connectingToServers' => '서버 연결 중...',
+			'common.startingOfflineMode' => '오프라인 모드 시작 중...',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
-			'screens.mpvConfig' => 'MPV 설정',
+			'screens.mpvConfig' => 'mpv.conf',
 			'screens.logs' => '로그',
 			'update.available' => '사용 가능한 업데이트',
 			'update.versionAvailable' => ({required Object version}) => '버전 ${version} 출시됨',
@@ -1401,10 +1420,12 @@ extension on TranslationsKo {
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
 			'settings.showUnwatchedCountDescription' => '시리즈 및 시즌에 미시청 에피소드 수 표시',
+			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
+			'settings.hideSpoilersDescription' => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다',
 			'settings.playerBackend' => '플레이어 백엔드',
 			'settings.exoPlayer' => 'ExoPlayer (권장)',
 			'settings.exoPlayerDescription' => '더 나은 하드웨어 지원을 제공하는 Android 네이티브 플레이어',
-			'settings.mpv' => 'MPV',
+			'settings.mpv' => 'mpv',
 			'settings.mpvDescription' => '더 많은 기능과 ASS 자막을 지원하는 고급 플레이어',
 			'settings.hardwareDecoding' => '하드웨어 디코딩',
 			'settings.hardwareDecodingDescription' => '가능한 경우 하드웨어 가속을 사용합니다',
@@ -1428,6 +1449,8 @@ extension on TranslationsKo {
 			'settings.keyboardShortcutsDescription' => '사용자 정의 키보드 단축키',
 			'settings.videoPlayerNavigation' => '비디오 플레이어 탐색',
 			'settings.videoPlayerNavigationDescription' => '방향 키를 사용하여 비디오 플레이어 컨트롤 탐색',
+			'settings.crashReporting' => '충돌 보고',
+			'settings.crashReportingDescription' => '앱 개선을 위해 충돌 보고서 전송',
 			'settings.debugLogging' => '디버그 로깅',
 			'settings.debugLoggingDescription' => '문제 해결을 위해 상세 로깅 활성화',
 			'settings.viewLogs' => '로그 보기',
@@ -1474,12 +1497,18 @@ extension on TranslationsKo {
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
 			'settings.discordRichPresence' => 'Discord Rich Presence',
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
+			'settings.autoPip' => '자동 PIP 모드',
+			'settings.autoPipDescription' => '재생 중 앱을 나갈 때 자동으로 PIP 모드로 전환',
 			'settings.matchContentFrameRate' => '콘텐츠 프레임 레이트 맞춤',
 			'settings.matchContentFrameRateDescription' => '비디오 콘텐츠에 맞게 디스플레이 주사율을 조정하여 떨림을 줄이고 배터리를 절약합니다',
+			'settings.tunneledPlayback' => 'Tunneled Playback',
+			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.confirmExitOnBack' => '종료 전 확인',
 			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
+			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
+			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -1538,8 +1567,9 @@ extension on TranslationsKo {
 			'mediaMenu.goToSeason' => '시즌으로 이동',
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.fileInfo' => '파일 정보',
-			'mediaMenu.confirmDelete' => '파일 시스템에서 이 항목을 삭제하시겠습니까?',
-			'mediaMenu.deleteMultipleWarning' => '여러 항목이 삭제될 수 있습니다.',
+			'mediaMenu.deleteFromServer' => '서버에서 삭제',
+			'mediaMenu.confirmDelete' => '이 미디어와 파일이 서버에서 영구적으로 삭제됩니다. 이 작업은 취소할 수 없습니다.',
+			'mediaMenu.deleteMultipleWarning' => '모든 에피소드와 파일이 포함됩니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',
@@ -1589,6 +1619,7 @@ extension on TranslationsKo {
 			'videoControls.settingsButton' => '동영상 설정',
 			'videoControls.audioTrackButton' => '음원 트랙',
 			'videoControls.subtitlesButton' => '자막',
+			'videoControls.tracksButton' => '오디오 및 자막',
 			'videoControls.chaptersButton' => '챕터',
 			'videoControls.versionsButton' => '동영상 버전',
 			'videoControls.pipButton' => '픽처 인 픽처 모드',
@@ -1603,10 +1634,13 @@ extension on TranslationsKo {
 			'videoControls.timelineSlider' => '타임라인',
 			'videoControls.volumeSlider' => '볼륨 조절',
 			'videoControls.endsAt' => ({required Object time}) => '${time}에 종료',
+			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
+			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면 권한이 비활성화되어 있습니다. 설정 > 앱 > Plezy > 화면 속 화면에서 활성화하세요',
 			'videoControls.pipErrors.notSupported' => '이 기기는 화면 속 화면 모드를 지원하지 않습니다',
+			'videoControls.pipErrors.voSwitchFailed' => '화면 속 화면을 위한 비디오 출력 전환에 실패했습니다',
 			'videoControls.pipErrors.failed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '오류가 발생했습니다: ${error}',
 			'videoControls.chapters' => '챕터',
@@ -1658,19 +1692,10 @@ extension on TranslationsKo {
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => 'Position',
-			'mpvConfig.title' => 'MPV 설정',
+			'mpvConfig.title' => 'mpv 설정',
 			'mpvConfig.description' => '고급 비디오 플레이어 설정',
-			'mpvConfig.properties' => '속성',
 			'mpvConfig.presets' => '사전 설정',
-			'mpvConfig.noProperties' => '설정된 속성이 없습니다',
 			'mpvConfig.noPresets' => '저장된 사전 설정이 없습니다',
-			'mpvConfig.addProperty' => '속성 추가',
-			'mpvConfig.editProperty' => '속성 편집',
-			'mpvConfig.deleteProperty' => '속성 삭제',
-			'mpvConfig.propertyKey' => '속성 키',
-			'mpvConfig.propertyKeyHint' => '예: hwdec, demuxer-max-bytes',
-			'mpvConfig.propertyValue' => '속성값',
-			'mpvConfig.propertyValueHint' => '예: auto, 256000000',
 			'mpvConfig.saveAsPreset' => '프리셋으로 저장...',
 			'mpvConfig.presetName' => '프리셋 이름',
 			'mpvConfig.presetNameHint' => '이 프리셋의 이름을 입력하세요',
@@ -1680,8 +1705,7 @@ extension on TranslationsKo {
 			'mpvConfig.presetLoaded' => '프리셋이 로드 되었습니다',
 			'mpvConfig.presetDeleted' => '프리셋이 삭제 되었습니다',
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
-			'mpvConfig.confirmDeleteProperty' => '이 속성을 삭제 하시겠습니까?',
-			'mpvConfig.entriesCount' => ({required Object count}) => '${count} 항목',
+			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
@@ -1795,6 +1819,8 @@ extension on TranslationsKo {
 			'liveTv.live' => '실시간',
 			'liveTv.hd' => 'HD',
 			'liveTv.premiere' => '신규',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.allChannels' => '전체 채널',
 			'liveTv.now' => '지금',
@@ -1806,8 +1832,6 @@ extension on TranslationsKo {
 			'liveTv.evening' => '저녁',
 			'liveTv.lateNight' => '심야 방송',
 			'liveTv.whatsOn' => '지금 방송 중',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.watchChannel' => '채널 시청',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
@@ -1820,7 +1844,6 @@ extension on TranslationsKo {
 			'collections.deleteFailedWithError' => ({required Object error}) => '컬렉션 삭제 실패: ${error}',
 			'collections.failedToLoadItems' => ({required Object error}) => '컬렉션 항목 로드 실패: ${error}',
 			'collections.selectCollection' => '컬렉션 선택',
-			'collections.createNewCollection' => '새 컬렉션 생성',
 			'collections.collectionName' => '컬렉션 이름',
 			'collections.enterCollectionName' => '컬렉션 이름 입력',
 			'collections.addedToCollection' => '컬렉션에 추가됨',
@@ -1850,7 +1873,6 @@ extension on TranslationsKo {
 			'playlists.itemAdded' => '재생 목록에 추가 되었습니다',
 			'playlists.itemRemoved' => '재생 목록에서 제거됨',
 			'playlists.selectPlaylist' => '재생 목록 선택',
-			'playlists.createNewPlaylist' => '새 재생 목록 생성',
 			'playlists.errorCreating' => '재생 목록 생성 실패',
 			'playlists.errorDeleting' => '재생 목록 삭제 실패',
 			'playlists.errorLoading' => '재생 목록 로드 실패',
@@ -1901,6 +1923,10 @@ extension on TranslationsKo {
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. 인터넷 제공업체가 연결을 차단하고 있을 수 있습니다. 시도해 볼 수 있지만 함께 보기가 작동하지 않을 수 있습니다.',
 			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
+			'watchTogether.currentPlayback' => '현재 재생',
+			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
+			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 보고 있는 항목으로 돌아갑니다',
+			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name}님이 참여했습니다',
 			'watchTogether.participantLeft' => ({required Object name}) => '${name}님이 나갔습니다',
 			'downloads.title' => '다운로드',
@@ -1927,6 +1953,12 @@ extension on TranslationsKo {
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',
+			'shaders.importShader' => 'Import Shader',
+			'shaders.customShaderDescription' => 'Custom GLSL shader',
+			'shaders.shaderImported' => 'Shader imported',
+			'shaders.shaderImportFailed' => 'Failed to import shader',
+			'shaders.deleteShader' => 'Delete Shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectToDevice' => '기기에 연결',
 			'companionRemote.hostRemoteSession' => '원격 세션 호스트',
@@ -1949,11 +1981,8 @@ extension on TranslationsKo {
 			'companionRemote.session.copyToClipboard' => '클립보드에 복사',
 			'companionRemote.session.newSession' => '새 세션',
 			'companionRemote.session.minimize' => '최소화',
-			'companionRemote.pairing.recent' => '최근',
 			'companionRemote.pairing.scan' => '스캔',
 			'companionRemote.pairing.manual' => '수동',
-			'companionRemote.pairing.recentConnections' => '최근 연결',
-			'companionRemote.pairing.quickReconnect' => '이전에 페어링한 기기에 빠르게 재연결',
 			'companionRemote.pairing.pairWithDesktop' => '데스크톱과 페어링',
 			'companionRemote.pairing.enterSessionDetails' => '데스크톱 기기에 표시된 세션 정보를 입력하세요',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
@@ -1967,11 +1996,7 @@ extension on TranslationsKo {
 			'companionRemote.pairing.cameraPermissionRequired' => 'QR 코드를 스캔하려면 카메라 권한이 필요합니다.\n기기 설정에서 카메라 접근을 허용해 주세요.',
 			'companionRemote.pairing.cameraError' => ({required Object error}) => '카메라를 시작할 수 없습니다: ${error}',
 			'companionRemote.pairing.scanInstruction' => '데스크톱에 표시된 QR 코드에 카메라를 향하세요',
-			'companionRemote.pairing.noRecentConnections' => '최근 연결 없음',
-			'companionRemote.pairing.connectUsingManual' => '수동 입력으로 기기에 연결하여 시작하세요',
 			'companionRemote.pairing.invalidQrCode' => '유효하지 않은 QR 코드 형식',
-			'companionRemote.pairing.removeRecentConnection' => '최근 연결 삭제',
-			'companionRemote.pairing.removeConfirm' => ({required Object name}) => '"${name}"을(를) 최근 연결에서 삭제하시겠습니까?',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => 'IP:포트 형식이어야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.validationSessionIdRequired' => '세션 ID를 입력하세요',
@@ -1981,7 +2006,6 @@ extension on TranslationsKo {
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 세션 ID와 PIN을 확인하세요.',
 			'companionRemote.pairing.sessionNotFound' => '세션을 찾을 수 없습니다. 자격 증명을 확인하세요.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
-			'companionRemote.pairing.failedToLoadRecent' => ({required Object error}) => '최근 세션 로드 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
 			'companionRemote.remote.reconnecting' => '재연결 중...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => '${current}/5 시도 중',
@@ -2019,6 +2043,8 @@ extension on TranslationsKo {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '오디오 출력',
 			'videoSettings.performanceOverlay' => '성능 오버레이',
+			'videoSettings.audioPassthrough' => '오디오 패스스루',
+			'videoSettings.audioNormalization' => '오디오 정규화',
 			'externalPlayer.title' => '외부 플레이어',
 			'externalPlayer.useExternalPlayer' => '외부 플레이어 사용',
 			'externalPlayer.useExternalPlayerDescription' => '내장 플레이어 대신 외부 앱에서 동영상 열기',

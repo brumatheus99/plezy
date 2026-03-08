@@ -4,6 +4,7 @@ import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
+import 'package:plezy/utils/http_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service to check for new versions on GitHub
@@ -36,7 +37,7 @@ class UpdateService {
   static bool get useNativeUpdater {
     if (!isUpdateCheckEnabled) return false;
     if (Platform.isMacOS) return !_isHomebrewInstall();
-    if (Platform.isWindows) return _isInstalledApp();
+    if (Platform.isWindows) return _isInstalledApp() && !_isWingetInstall();
     return false;
   }
 
@@ -72,6 +73,17 @@ class UpdateService {
     try {
       final execPath = Platform.resolvedExecutable;
       return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Check if the Windows app was installed via winget.
+  /// The Inno Setup installer writes a .winget marker file when invoked with /WINGET=1.
+  static bool _isWingetInstall() {
+    try {
+      final exeDir = File(Platform.resolvedExecutable).parent.path;
+      return File('$exeDir\\.winget').existsSync();
     } catch (_) {
       return false;
     }
@@ -142,7 +154,7 @@ class UpdateService {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      final dio = Dio();
+      final dio = createHttpClient();
       final response = await dio.get(
         'https://api.github.com/repos/$_githubRepo/releases/latest',
         options: Options(headers: {'Accept': 'application/vnd.github+json'}),
