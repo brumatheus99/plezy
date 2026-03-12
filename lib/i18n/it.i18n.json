@@ -6,9 +6,6 @@
     "signInWithPlex": "Accedi con Plex",
     "showQRCode": "Mostra QR Code",
     "authenticate": "Autenticazione",
-    "debugEnterToken": "Debug: Inserisci Token Plex",
-    "plexTokenLabel": "Token Auth Plex",
-    "plexTokenHint": "Inserisci il tuo token di Plex.tv",
     "authenticationTimeout": "Autenticazione scaduta. Riprova.",
     "scanQRToSignIn": "Scansiona il QR code per accedere",
     "waitingForAuth": "In attesa di autenticazione...\nCompleta l'accesso dal tuo browser.",
@@ -181,6 +178,11 @@
     "autoSkipCreditsDescription": "Salta automaticamente i crediti e riproduci l'episodio successivo",
     "autoSkipDelay": "Ritardo Salto Automatico",
     "autoSkipDelayDescription": "Aspetta ${seconds} secondi prima del salto automatico",
+    "introPattern": "Pattern marcatore intro",
+    "introPatternDescription": "Espressione regolare per riconoscere i marcatori intro nei titoli dei capitoli",
+    "creditsPattern": "Pattern marcatore titoli di coda",
+    "creditsPatternDescription": "Espressione regolare per riconoscere i marcatori dei titoli di coda nei capitoli",
+    "invalidRegex": "Espressione regolare non valida",
     "downloads": "Download",
     "downloadLocationDescription": "Scegli dove salvare i contenuti scaricati",
     "downloadLocationDefault": "Predefinita (Archiviazione App)",
@@ -204,8 +206,8 @@
     "autoPipDescription": "Attiva automaticamente il picture-in-picture quando si esce dall'app durante la riproduzione",
     "matchContentFrameRate": "Adatta frequenza fotogrammi",
     "matchContentFrameRateDescription": "Regola la frequenza di aggiornamento del display in base al contenuto video, riducendo i tremolii e risparmiando batteria",
-    "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content",
+    "tunneledPlayback": "Riproduzione tunnelizzata",
+    "tunneledPlaybackDescription": "Usa il tunneling video accelerato dall'hardware. Disattiva se vedi uno schermo nero con audio su contenuti HDR",
     "requireProfileSelectionOnOpen": "Chiedi profilo all'apertura",
     "requireProfileSelectionOnOpenDescription": "Mostra la selezione del profilo ogni volta che l'app viene aperta",
     "confirmExitOnBack": "Conferma prima di uscire",
@@ -368,8 +370,8 @@
     },
     "chapters": "Capitoli",
     "noChaptersAvailable": "Nessun capitolo disponibile",
-    "queue": "Queue",
-    "noQueueItems": "No items in queue"
+    "queue": "Coda",
+    "noQueueItems": "Nessun elemento in coda"
   },
   "userStatus": {
     "admin": "Admin",
@@ -408,9 +410,9 @@
     "failedToCreatePlayQueueNoItems": "Impossibile creare la coda di riproduzione - nessun elemento",
     "failedPlayback": "Impossibile ${action}: ${error}",
     "switchingToCompatiblePlayer": "Passaggio al lettore compatibile...",
-    "logsUploaded": "Logs uploaded",
-    "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logsUploaded": "Log caricati",
+    "logsUploadFailed": "Caricamento log fallito",
+    "logId": "ID log"
   },
   "subtitlingStyling": {
     "stylingOptions": "Opzioni stile",
@@ -420,7 +422,7 @@
     "borderColor": "Colore bordo",
     "backgroundOpacity": "Opacità sfondo",
     "backgroundColor": "Colore sfondo",
-    "position": "Position"
+    "position": "Posizione"
   },
   "mpvConfig": {
     "title": "Configurazione mpv",
@@ -547,7 +549,7 @@
   "logs": {
     "clearLogs": "Cancella log",
     "copyLogs": "Copia log",
-    "uploadLogs": "Upload Logs",
+    "uploadLogs": "Carica log",
     "error": "Errore:",
     "stackTrace": "Traccia dello stack:"
   },
@@ -718,15 +720,15 @@
     "qualityFast": "Veloce",
     "qualityHQ": "Alta qualità",
     "mode": "Modalità",
-    "importShader": "Import Shader",
-    "customShaderDescription": "Custom GLSL shader",
-    "shaderImported": "Shader imported",
-    "shaderImportFailed": "Failed to import shader",
-    "deleteShader": "Delete Shader",
-    "deleteShaderConfirm": "Delete \"${name}\"?"
+    "importShader": "Importa shader",
+    "customShaderDescription": "Shader GLSL personalizzato",
+    "shaderImported": "Shader importato",
+    "shaderImportFailed": "Importazione shader fallita",
+    "deleteShader": "Elimina shader",
+    "deleteShaderConfirm": "Eliminare \"${name}\"?"
   },
   "companionRemote": {
-    "title": "Companion Remote",
+    "title": "Telecomando",
     "connectToDevice": "Connetti a un dispositivo",
     "hostRemoteSession": "Ospita sessione remota",
     "controlThisDevice": "Controlla questo dispositivo con il tuo telefono",

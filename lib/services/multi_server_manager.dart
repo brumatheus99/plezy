@@ -38,6 +38,15 @@ class MultiServerManager {
   /// Debounce timers for endpoint-exhaustion-triggered reconnection (per server)
   final Map<String, Timer> _reconnectDebounce = {};
 
+  /// Coalescing guard for checkServerHealth — prevents concurrent health checks
+  Future<void>? _activeHealthCheck;
+
+  /// Coalescing guard for reconnectOfflineServers — prevents concurrent reconnect sweeps
+  Future<void>? _activeReconnect;
+
+  /// Debounce timer for connectivity events — collapses rapid network flapping
+  Timer? _connectivityDebounce;
+
   /// Get all registered server IDs
   List<String> get serverIds => _servers.keys.toList();
 
@@ -292,6 +301,18 @@ class MultiServerManager {
   /// Uses [PlexClient.isHealthy] which checks for HTTP 200, so servers with
   /// invalid tokens (401) are correctly reported as offline.
   Future<void> checkServerHealth() async {
+    // Coalesce concurrent calls — return the in-flight future if one exists
+    if (_activeHealthCheck != null) return _activeHealthCheck!;
+
+    _activeHealthCheck = _doCheckServerHealth();
+    try {
+      await _activeHealthCheck;
+    } finally {
+      _activeHealthCheck = null;
+    }
+  }
+
+  Future<void> _doCheckServerHealth() async {
     appLogger.d('Checking health for ${_clients.length} servers');
 
     final healthChecks = _clients.entries.map((entry) async {
@@ -316,39 +337,51 @@ class MultiServerManager {
     }
 
     appLogger.i('Starting network monitoring for all servers');
-    final connectivity = Connectivity();
-    _connectivitySubscription = connectivity.onConnectivityChanged.listen(
-      (results) {
-        final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
+    runZonedGuarded(() {
+      final connectivity = Connectivity();
+      _connectivitySubscription = connectivity.onConnectivityChanged.listen(
+        (results) {
+          final status = results.isNotEmpty ? results.first : ConnectivityResult.none;
 
-        if (status == ConnectivityResult.none) {
-          appLogger.w('Connectivity lost, pausing optimization until network returns');
-          return;
-        }
+          if (status == ConnectivityResult.none) {
+            appLogger.w('Connectivity lost, pausing optimization until network returns');
+            return;
+          }
 
-        appLogger.d(
-          'Connectivity change detected, re-optimizing all servers',
-          error: {
-            'status': status.name,
-            'interfaces': results.map((r) => r.name).toList(),
-            'serverCount': _servers.length,
-          },
-        );
+          // Debounce rapid connectivity events (e.g. WiFi flapping) into a single trigger
+          _connectivityDebounce?.cancel();
+          _connectivityDebounce = Timer(const Duration(seconds: 2), () {
+            _connectivityDebounce = null;
 
-        // Re-optimize all servers and re-probe offline ones
-        _reoptimizeAllServers(reason: 'connectivity:${status.name}');
-        checkServerHealth();
-      },
-      onError: (error, stackTrace) {
-        appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
-      },
-    );
+            appLogger.d(
+              'Connectivity change detected, re-optimizing all servers',
+              error: {
+                'status': status.name,
+                'interfaces': results.map((r) => r.name).toList(),
+                'serverCount': _servers.length,
+              },
+            );
+
+            // Re-optimize all servers and re-probe offline ones
+            _reoptimizeAllServers(reason: 'connectivity:${status.name}');
+            checkServerHealth();
+          });
+        },
+        onError: (error, stackTrace) {
+          appLogger.w('Connectivity listener error', error: error, stackTrace: stackTrace);
+        },
+      );
+    }, (error, stack) {
+      appLogger.w('Connectivity monitoring unavailable', error: error);
+    });
   }
 
   /// Stop monitoring network connectivity
   void stopNetworkMonitoring() {
     _connectivitySubscription?.cancel();
     _connectivitySubscription = null;
+    _connectivityDebounce?.cancel();
+    _connectivityDebounce = null;
     appLogger.i('Stopped network monitoring');
   }
 
@@ -437,6 +470,18 @@ class MultiServerManager {
 
   /// Attempt reconnection for all offline servers
   Future<void> reconnectOfflineServers() async {
+    // Coalesce concurrent calls — return the in-flight future if one exists
+    if (_activeReconnect != null) return _activeReconnect!;
+
+    _activeReconnect = _doReconnectOfflineServers();
+    try {
+      await _activeReconnect;
+    } finally {
+      _activeReconnect = null;
+    }
+  }
+
+  Future<void> _doReconnectOfflineServers() async {
     final offline = offlineServerIds;
     if (offline.isEmpty) return;
 
@@ -497,6 +542,8 @@ class MultiServerManager {
       timer.cancel();
     }
     _reconnectDebounce.clear();
+    _activeHealthCheck = null;
+    _activeReconnect = null;
     _clients.clear();
     _servers.clear();
     _serverStatus.clear();

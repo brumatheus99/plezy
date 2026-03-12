@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -29,6 +28,7 @@ import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
 import 'providers/companion_remote_provider.dart';
 import 'providers/shader_provider.dart';
+import 'utils/snackbar_helper.dart';
 import 'watch_together/watch_together.dart';
 import 'services/multi_server_manager.dart';
 import 'services/offline_watch_sync_service.dart';
@@ -53,6 +53,9 @@ import 'utils/navigation_transitions.dart';
 import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
+const String _gitCommit = String.fromEnvironment('GIT_COMMIT');
+
 // Workaround for Flutter bug #177992: iPadOS 26.1+ misinterprets fake touch events
 // at (0,0) as barrier taps, causing modals to dismiss immediately.
 // Remove when Flutter PR #179643 is merged.
@@ -70,89 +73,98 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
   }
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
 
-  final packageInfo = await PackageInfo.fromPlatform();
+  if (_enableSentry) {
+    final packageInfo = await PackageInfo.fromPlatform();
 
-  await SentryFlutter.init(
-    (options) {
+    await SentryFlutter.init((options) {
       options.dsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
-      options.release = 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
+      options.release = _gitCommit.isNotEmpty
+          ? 'plezy@${_gitCommit.substring(0, 7)}'
+          : 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
       options.tracesSampleRate = 0;
       options.attachStacktrace = true;
       options.enableAutoSessionTracking = false;
       options.recordHttpBreadcrumbs = false;
       options.beforeSend = _beforeSend;
       options.beforeBreadcrumb = _beforeBreadcrumb;
-    },
-    appRunner: () async {
-      // Initialize settings first to get saved locale
-      final settings = await SettingsService.getInstance();
-      final savedLocale = settings.getAppLocale();
+    }, appRunner: _bootstrapApp);
+    return;
+  }
 
-      // Initialize localization with saved locale
-      LocaleSettings.setLocale(savedLocale);
+  await _bootstrapApp();
+}
 
-      // Needed for formatting dates in different locales
-      await initializeDateFormatting(savedLocale.languageCode, null);
+Future<void> _bootstrapApp() async {
+  // Initialize settings first to get saved locale
+  final settings = await SettingsService.getInstance();
+  final savedLocale = settings.getAppLocale();
 
-      // Configure image cache for large libraries
-      PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
-      PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
+  // Initialize localization with saved locale
+  LocaleSettings.setLocale(savedLocale);
 
-      // Initialize services in parallel where possible
-      final futures = <Future<void>>[];
+  // Needed for formatting dates in different locales
+  await initializeDateFormatting(savedLocale.languageCode, null);
 
-      // Initialize window_manager for desktop platforms
-      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        futures.add(windowManager.ensureInitialized());
-      }
+  // Configure image cache for large libraries
+  PaintingBinding.instance.imageCache.maximumSize = 2000; // default 1000
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 300 << 20; // 300MB
 
-      // Initialize TV detection and PiP service for Android
-      if (Platform.isAndroid) {
-        futures.add(TvDetectionService.getInstance());
-        // Initialize PiP service to listen for PiP state changes
-        PipService();
-      }
+  // Initialize services in parallel where possible
+  final futures = <Future<void>>[];
 
-      // Configure macOS window with custom titlebar (depends on window manager)
-      futures.add(MacOSWindowService.setupCustomTitlebar());
+  // Initialize window_manager for desktop platforms
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    futures.add(windowManager.ensureInitialized());
+  }
 
-      // Initialize storage service
-      futures.add(StorageService.getInstance());
+  // Initialize TV detection and PiP service for Android
+  if (Platform.isAndroid) {
+    futures.add(TvDetectionService.getInstance());
+    // Initialize PiP service to listen for PiP state changes
+    PipService();
+  }
 
-      // Initialize language codes for track selection
-      futures.add(LanguageCodes.initialize());
+  // Configure macOS window with custom titlebar (depends on window manager)
+  futures.add(MacOSWindowService.setupCustomTitlebar());
 
-      // Wait for all parallel services to complete
-      await Future.wait(futures);
+  // Initialize storage service
+  futures.add(StorageService.getInstance());
 
-      // Initialize logger level based on debug setting
-      final debugEnabled = settings.getEnableDebugLogging();
-      setLoggerLevel(debugEnabled);
+  // Initialize language codes for track selection
+  futures.add(LanguageCodes.initialize());
 
-      // Initialize download storage service with settings
-      await DownloadStorageService.instance.initialize(settings);
+  // Wait for all parallel services to complete
+  await Future.wait(futures);
 
-      // Start global fullscreen state monitoring
-      FullscreenStateManager().startMonitoring();
+  // Initialize logger level based on debug setting
+  final debugEnabled = settings.getEnableDebugLogging();
+  setLoggerLevel(debugEnabled);
 
-      // Initialize gamepad service for desktop platforms
-      if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        GamepadService.instance.start();
-        DiscordRPCService.instance.initialize();
-      }
+  // Initialize download storage service with settings
+  await DownloadStorageService.instance.initialize(settings);
 
-      // DTD service is available for MCP tooling connection if needed
+  // Start global fullscreen state monitoring
+  FullscreenStateManager().startMonitoring();
 
-      // Register bundled shader licenses
-      _registerShaderLicenses();
+  // Initialize gamepad service (all platforms — universal_gamepad auto-registers
+  // and intercepts input events, so we must listen to re-dispatch them)
+  GamepadService.instance.start();
 
-      runApp(const MainApp());
-    },
-  );
+  // Desktop-only services
+  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+    DiscordRPCService.instance.initialize();
+  }
+
+  // DTD service is available for MCP tooling connection if needed
+
+  // Register bundled shader licenses
+  _registerShaderLicenses();
+
+  runApp(const MainApp());
 }
 
 Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
@@ -183,6 +195,11 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
             e.value!.contains('plexImageCache') &&
             e.value!.contains('errno = 32'),
       )) {
+    return null;
+  }
+
+  // Drop DBusServiceUnknownException from Linux without NetworkManager
+  if (exceptions != null && exceptions.any((e) => e.type == 'DBusServiceUnknownException')) {
     return null;
   }
 
@@ -284,6 +301,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
 
+  /// Last time server health probes ran from a resume event (cooldown for desktop)
+  DateTime _lastResumeProbe = DateTime(0);
+
   @override
   void initState() {
     super.initState();
@@ -318,9 +338,18 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // App came back to foreground - trigger sync check and start new session
         _offlineWatchSyncService.onAppResumed();
         InAppReviewService.instance.startSession();
-        // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep
-        _serverManager.checkServerHealth();
-        _serverManager.reconnectOfflineServers();
+        // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
+        // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
+        // to avoid piling up network probes from rapid alt-tabbing.
+        final now = DateTime.now();
+        final cooldown = (Platform.isIOS || Platform.isAndroid)
+            ? const Duration(seconds: 10)
+            : const Duration(minutes: 2);
+        if (now.difference(_lastResumeProbe) >= cooldown) {
+          _lastResumeProbe = now;
+          _serverManager.checkServerHealth();
+          _serverManager.reconnectOfflineServers();
+        }
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         // App went to background or is closing - end session
@@ -400,6 +429,13 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                 themeMode: themeProvider.materialThemeMode,
                 navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
                 home: const OrientationAwareSetup(),
+                builder: (context, child) => ScaffoldMessenger(
+                  key: rootScaffoldMessengerKey,
+                  child: Scaffold(
+                    backgroundColor: Colors.transparent,
+                    body: child,
+                  ),
+                ),
               ),
             ),
           );
@@ -443,6 +479,9 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   String _statusMessage = '';
 
+  // Per-server connection status: serverId -> (name, connected?)
+  final Map<String, (String name, bool? connected)> _serverStatus = {};
+
   @override
   void initState() {
     super.initState();
@@ -461,11 +500,17 @@ class _SetupScreenState extends State<SetupScreen> {
 
     // Check network connectivity early to fast-path airplane mode.
     // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
-    final connectivityResult = await Connectivity().checkConnectivity().timeout(
-      const Duration(seconds: 3),
-      onTimeout: () => [ConnectivityResult.other],
-    );
-    final hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
+    bool hasNetwork;
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => [ConnectivityResult.other],
+      );
+      hasNetwork = !connectivityResult.contains(ConnectivityResult.none);
+    } catch (e) {
+      // connectivity_plus throws DBusServiceUnknownException on Linux without NetworkManager
+      hasNetwork = true;
+    }
 
     if (hasNetwork) {
       _setStatus(t.common.refreshingServers);
@@ -508,6 +553,15 @@ class _SetupScreenState extends State<SetupScreen> {
 
     _setStatus(t.common.connectingToServers);
 
+    // Populate per-server status for splash display
+    if (mounted) {
+      setState(() {
+        for (final server in servers) {
+          _serverStatus[server.clientIdentifier] = (server.name, null);
+        }
+      });
+    }
+
     try {
       final result = await ServerConnectionOrchestrator.connectAndInitialize(
         servers: servers,
@@ -515,6 +569,16 @@ class _SetupScreenState extends State<SetupScreen> {
         librariesProvider: context.read<LibrariesProvider>(),
         syncService: context.read<OfflineWatchSyncService>(),
         clientIdentifier: storage.getClientIdentifier(),
+        onServerStatus: (serverId, success) {
+          if (mounted) {
+            setState(() {
+              final existing = _serverStatus[serverId];
+              if (existing != null) {
+                _serverStatus[serverId] = (existing.$1, success);
+              }
+            });
+          }
+        },
       );
 
       if (!mounted) return;
@@ -545,30 +609,81 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
+  Widget _buildStatusText(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: Text(
+        _statusMessage,
+        key: ValueKey(_statusMessage),
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildServerStatusList(BuildContext context) {
+    if (_serverStatus.isEmpty) return const SizedBox.shrink();
+    final textTheme = Theme.of(context).textTheme;
+    final dimColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5);
+    const coralColor = Color(0xFFE5A00D);
+    const successColor = Color(0xFF4CAF50);
+    const failColor = Color(0xFFEF5350);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: _serverStatus.entries.map((entry) {
+        final (name, connected) = entry.value;
+        final Widget statusIcon;
+        if (connected == null) {
+          statusIcon = const SizedBox(
+            width: 12, height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5, color: coralColor),
+          );
+        } else if (connected) {
+          statusIcon = const Icon(Icons.check_circle, size: 14, color: successColor);
+        } else {
+          statusIcon = const Icon(Icons.cancel, size: 14, color: failColor);
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              statusIcon,
+              const SizedBox(width: 8),
+              Text(name, style: textTheme.bodySmall?.copyWith(color: dimColor)),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    const coralColor = Color(0xFFE5A00D);
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
-          // Icon dead-center, matching Android 12+ splash position.
-          // 192dp accounts for the 16% inset in ic_launcher.xml.
           Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
-          // Status text below center, independent of icon position.
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: MediaQuery.of(context).size.height * 0.5 - 140,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                _statusMessage,
-                key: ValueKey(_statusMessage),
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-              ),
+            left: 0, right: 0,
+            bottom: MediaQuery.of(context).size.height * 0.5 - 170,
+            child: _buildStatusText(context),
+          ),
+          Positioned(
+            left: 0, right: 0,
+            top: MediaQuery.of(context).size.height * 0.5 + 180,
+            child: Center(
+              child: _serverStatus.isEmpty
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: coralColor),
+                    )
+                  : _buildServerStatusList(context),
             ),
           ),
         ],

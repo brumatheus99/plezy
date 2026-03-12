@@ -9,6 +9,15 @@ import '../utils/global_key_utils.dart';
 
 part 'plex_metadata.g.dart';
 
+Object? _readRatingKey(Map json, String key) =>
+    json['ratingKey'] ?? json['key'] ?? '';
+
+int? _flexibleInt(Object? v) => switch (v) {
+      num n => n.toInt(),
+      String s => int.tryParse(s),
+      _ => null,
+    };
+
 /// Media type enum for type-safe media type handling
 enum PlexMediaType {
   movie,
@@ -51,6 +60,7 @@ enum PlexMediaType {
 
 @JsonSerializable()
 class PlexMetadata with MultiServerFields {
+  @JsonKey(readValue: _readRatingKey)
   final String ratingKey;
   final String key;
   final String? guid;
@@ -85,11 +95,13 @@ class PlexMetadata with MultiServerFields {
   final int? viewCount;
   final int? leafCount; // Total number of episodes in a series/season
   final int? viewedLeafCount; // Number of watched episodes in a series/season
+  @JsonKey(fromJson: _flexibleInt)
   final int? childCount; // Number of items in a collection or playlist
   @JsonKey(name: 'Role')
   final List<PlexRole>? role; // Cast members
   final String? audioLanguage; // Per-media preferred audio language
   final String? subtitleLanguage; // Per-media preferred subtitle language
+  @JsonKey(fromJson: _flexibleInt)
   final int? subtitleMode; // Per-media subtitle mode (0=manual, 1=foreign audio, 2=always, -1=account default)
   final int? playlistItemID; // Playlist item ID (for dumb playlists only)
   final int? playQueueItemID; // Play queue item ID (unique even for duplicates)
@@ -99,6 +111,7 @@ class PlexMetadata with MultiServerFields {
   final String? audienceRatingImage; // Audience rating source URI
   final String? tagline;
   final String? originalTitle;
+  final String? editionTitle; // Edition name for movies (e.g., "Director's Cut", "Extended")
   final String? subtype; // Clip subtype: "trailer", "behindTheScenes", "deleted", etc.
   final int? extraType; // Numeric extra type identifier
   final String? primaryExtraKey; // Points to main trailer (e.g., "/library/metadata/52601")
@@ -186,6 +199,7 @@ class PlexMetadata with MultiServerFields {
     this.audienceRatingImage,
     this.tagline,
     this.originalTitle,
+    this.editionTitle,
     this.subtype,
     this.extraType,
     this.primaryExtraKey,
@@ -244,6 +258,7 @@ class PlexMetadata with MultiServerFields {
     String? audienceRatingImage,
     String? tagline,
     String? originalTitle,
+    String? editionTitle,
     String? subtype,
     int? extraType,
     String? primaryExtraKey,
@@ -300,6 +315,7 @@ class PlexMetadata with MultiServerFields {
       audienceRatingImage: audienceRatingImage ?? this.audienceRatingImage,
       tagline: tagline ?? this.tagline,
       originalTitle: originalTitle ?? this.originalTitle,
+      editionTitle: editionTitle ?? this.editionTitle,
       subtype: subtype ?? this.subtype,
       extraType: extraType ?? this.extraType,
       primaryExtraKey: primaryExtraKey ?? this.primaryExtraKey,
@@ -454,10 +470,6 @@ class PlexMetadata with MultiServerFields {
   }
 
   factory PlexMetadata.fromJson(Map<String, dynamic> json) {
-    // Plex API returns subtitleMode as a string
-    if (json['subtitleMode'] is String) {
-      json = {...json, 'subtitleMode': num.tryParse(json['subtitleMode'] as String)};
-    }
     try {
       return _$PlexMetadataFromJson(kBlurArtwork ? _obfuscateJson(json) : json);
     } on TypeError catch (e, st) {

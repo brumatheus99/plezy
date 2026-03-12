@@ -97,9 +97,6 @@ class _TranslationsAuthZh implements TranslationsAuthEn {
 	@override String get signInWithPlex => '使用 Plex 登录';
 	@override String get showQRCode => '显示二维码';
 	@override String get authenticate => '验证';
-	@override String get debugEnterToken => '调试：输入 Plex Token';
-	@override String get plexTokenLabel => 'Plex 授权令牌 (Auth Token)';
-	@override String get plexTokenHint => '输入你的 Plex.tv 令牌';
 	@override String get authenticationTimeout => '验证超时。请重试。';
 	@override String get scanQRToSignIn => '扫描二维码登录';
 	@override String get waitingForAuth => '等待验证中...\n请在你的浏览器中完成登录。';
@@ -300,6 +297,11 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => '自动跳过片尾并播放下一集';
 	@override String get autoSkipDelay => '自动跳过延迟';
 	@override String autoSkipDelayDescription({required Object seconds}) => '自动跳过前等待 ${seconds} 秒';
+	@override String get introPattern => '片头标记模式';
+	@override String get introPatternDescription => '用于匹配章节标题中片头标记的正则表达式';
+	@override String get creditsPattern => '片尾标记模式';
+	@override String get creditsPatternDescription => '用于匹配章节标题中片尾标记的正则表达式';
+	@override String get invalidRegex => '无效的正则表达式';
 	@override String get downloads => '下载';
 	@override String get downloadLocationDescription => '选择下载内容的存储位置';
 	@override String get downloadLocationDefault => '默认（应用存储）';
@@ -323,8 +325,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get autoPipDescription => '在播放期间离开应用时自动进入画中画模式';
 	@override String get matchContentFrameRate => '匹配内容帧率';
 	@override String get matchContentFrameRateDescription => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => '通道化播放';
+	@override String get tunneledPlaybackDescription => '使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项';
 	@override String get requireProfileSelectionOnOpen => '打开应用时询问配置文件';
 	@override String get requireProfileSelectionOnOpenDescription => '每次打开应用时显示配置文件选择';
 	@override String get confirmExitOnBack => '退出前确认';
@@ -515,8 +517,8 @@ class _TranslationsVideoControlsZh implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
 	@override String get noChaptersAvailable => '没有可用的章节';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => '播放队列';
+	@override String get noQueueItems => '队列中没有项目';
 }
 
 // Path: userStatus
@@ -569,9 +571,9 @@ class _TranslationsMessagesZh implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => '创建播放队列失败 - 没有项目';
 	@override String failedPlayback({required Object action, required Object error}) => '无法${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => '正在切换到兼容的播放器...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => '日志已上传';
+	@override String get logsUploadFailed => '上传日志失败';
+	@override String get logId => '日志 ID';
 }
 
 // Path: subtitlingStyling
@@ -588,7 +590,7 @@ class _TranslationsSubtitlingStylingZh implements TranslationsSubtitlingStylingE
 	@override String get borderColor => '边框颜色';
 	@override String get backgroundOpacity => '背景不透明度';
 	@override String get backgroundColor => '背景颜色';
-	@override String get position => 'Position';
+	@override String get position => '位置';
 }
 
 // Path: mpvConfig
@@ -766,7 +768,7 @@ class _TranslationsLogsZh implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => '清除日志';
 	@override String get copyLogs => '复制日志';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => '上传日志';
 	@override String get error => '错误:';
 	@override String get stackTrace => '堆栈跟踪 (Stack Trace):';
 }
@@ -993,12 +995,12 @@ class _TranslationsShadersZh implements TranslationsShadersEn {
 	@override String get qualityFast => '快速';
 	@override String get qualityHQ => '高质量';
 	@override String get mode => '模式';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => '导入着色器';
+	@override String get customShaderDescription => '自定义 GLSL 着色器';
+	@override String get shaderImported => '着色器已导入';
+	@override String get shaderImportFailed => '导入着色器失败';
+	@override String get deleteShader => '删除着色器';
+	@override String deleteShaderConfirm({required Object name}) => '删除"${name}"？';
 }
 
 // Path: companionRemote
@@ -1008,7 +1010,7 @@ class _TranslationsCompanionRemoteZh implements TranslationsCompanionRemoteEn {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => '伴侣遥控';
 	@override String get connectToDevice => '连接到设备';
 	@override String get hostRemoteSession => '创建远程会话';
 	@override String get controlThisDevice => '使用手机控制此设备';
@@ -1311,9 +1313,6 @@ extension on TranslationsZh {
 			'auth.signInWithPlex' => '使用 Plex 登录',
 			'auth.showQRCode' => '显示二维码',
 			'auth.authenticate' => '验证',
-			'auth.debugEnterToken' => '调试：输入 Plex Token',
-			'auth.plexTokenLabel' => 'Plex 授权令牌 (Auth Token)',
-			'auth.plexTokenHint' => '输入你的 Plex.tv 令牌',
 			'auth.authenticationTimeout' => '验证超时。请重试。',
 			'auth.scanQRToSignIn' => '扫描二维码登录',
 			'auth.waitingForAuth' => '等待验证中...\n请在你的浏览器中完成登录。',
@@ -1478,6 +1477,11 @@ extension on TranslationsZh {
 			'settings.autoSkipCreditsDescription' => '自动跳过片尾并播放下一集',
 			'settings.autoSkipDelay' => '自动跳过延迟',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '自动跳过前等待 ${seconds} 秒',
+			'settings.introPattern' => '片头标记模式',
+			'settings.introPatternDescription' => '用于匹配章节标题中片头标记的正则表达式',
+			'settings.creditsPattern' => '片尾标记模式',
+			'settings.creditsPatternDescription' => '用于匹配章节标题中片尾标记的正则表达式',
+			'settings.invalidRegex' => '无效的正则表达式',
 			'settings.downloads' => '下载',
 			'settings.downloadLocationDescription' => '选择下载内容的存储位置',
 			'settings.downloadLocationDefault' => '默认（应用存储）',
@@ -1501,8 +1505,8 @@ extension on TranslationsZh {
 			'settings.autoPipDescription' => '在播放期间离开应用时自动进入画中画模式',
 			'settings.matchContentFrameRate' => '匹配内容帧率',
 			'settings.matchContentFrameRateDescription' => '调整显示刷新率以匹配视频内容，减少画面抖动并节省电量',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => '通道化播放',
+			'settings.tunneledPlaybackDescription' => '使用硬件加速视频通道。如果在 HDR 内容上看到黑屏但有声音，请禁用此选项',
 			'settings.requireProfileSelectionOnOpen' => '打开应用时询问配置文件',
 			'settings.requireProfileSelectionOnOpenDescription' => '每次打开应用时显示配置文件选择',
 			'settings.confirmExitOnBack' => '退出前确认',
@@ -1645,8 +1649,8 @@ extension on TranslationsZh {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => '发生错误：${error}',
 			'videoControls.chapters' => '章节',
 			'videoControls.noChaptersAvailable' => '没有可用的章节',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => '播放队列',
+			'videoControls.noQueueItems' => '队列中没有项目',
 			'userStatus.admin' => '管理员',
 			'userStatus.restricted' => '受限',
 			'userStatus.protected' => '受保护',
@@ -1681,9 +1685,9 @@ extension on TranslationsZh {
 			'messages.failedToCreatePlayQueueNoItems' => '创建播放队列失败 - 没有项目',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => '无法${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => '正在切换到兼容的播放器...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => '日志已上传',
+			'messages.logsUploadFailed' => '上传日志失败',
+			'messages.logId' => '日志 ID',
 			'subtitlingStyling.stylingOptions' => '样式选项',
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
@@ -1691,7 +1695,7 @@ extension on TranslationsZh {
 			'subtitlingStyling.borderColor' => '边框颜色',
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
-			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.position' => '位置',
 			'mpvConfig.title' => 'mpv 配置',
 			'mpvConfig.description' => '高级视频播放器设置',
 			'mpvConfig.presets' => '预设',
@@ -1796,7 +1800,7 @@ extension on TranslationsZh {
 			'hubDetail.noItemsFound' => '未找到项目',
 			'logs.clearLogs' => '清除日志',
 			'logs.copyLogs' => '复制日志',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => '上传日志',
 			'logs.error' => '错误:',
 			'logs.stackTrace' => '堆栈跟踪 (Stack Trace):',
 			'licenses.relatedPackages' => '相关软件包',
@@ -1817,10 +1821,10 @@ extension on TranslationsZh {
 			'liveTv.noPrograms' => '没有可用的节目数据',
 			'liveTv.channelNumber' => ({required Object number}) => '频道 ${number}',
 			'liveTv.live' => '直播',
-			'liveTv.hd' => '高清',
-			'liveTv.premiere' => '新',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => '高清',
+			'liveTv.premiere' => '新',
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.allChannels' => '所有频道',
 			'liveTv.now' => '现在',
@@ -1953,13 +1957,13 @@ extension on TranslationsZh {
 			'shaders.qualityFast' => '快速',
 			'shaders.qualityHQ' => '高质量',
 			'shaders.mode' => '模式',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => '导入着色器',
+			'shaders.customShaderDescription' => '自定义 GLSL 着色器',
+			'shaders.shaderImported' => '着色器已导入',
+			'shaders.shaderImportFailed' => '导入着色器失败',
+			'shaders.deleteShader' => '删除着色器',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => '删除"${name}"？',
+			'companionRemote.title' => '伴侣遥控',
 			'companionRemote.connectToDevice' => '连接到设备',
 			'companionRemote.hostRemoteSession' => '创建远程会话',
 			'companionRemote.controlThisDevice' => '使用手机控制此设备',

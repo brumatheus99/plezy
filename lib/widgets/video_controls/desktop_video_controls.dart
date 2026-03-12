@@ -83,6 +83,9 @@ class DesktopVideoControls extends StatefulWidget {
   /// Called when content strip visibility changes
   final ValueChanged<bool>? onContentStripVisibilityChanged;
 
+  /// Called when a seek operation completes successfully.
+  final Function(Duration position)? onSeekCompleted;
+
   const DesktopVideoControls({
     super.key,
     required this.player,
@@ -115,6 +118,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.onContentStripVisibilityChanged,
+    this.onSeekCompleted,
   });
 
   @override
@@ -489,12 +493,17 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
                   Container(
-                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-                    decoration: const BoxDecoration(
+                    padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black87],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.65),
+                          Colors.black.withValues(alpha: 0.7),
+                        ],
+                        stops: const [0.0, 0.42, 1.0],
                       ),
                     ),
                     child: Column(
@@ -510,6 +519,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                           serverId: widget.serverId,
                           showQueueTab: widget.showQueueTab,
                           onQueueItemSelected: widget.onQueueItemSelected,
+                          onSeekCompleted: widget.onSeekCompleted,
                           useFocusNavigation: true,
                           onNavigateUp: _onContentStripNavigateUp,
                           onFocusActivity: widget.onFocusActivity,
@@ -788,6 +798,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                   chapters: widget.chapters,
                   chaptersLoaded: widget.chaptersLoaded,
                   trackControlsState: _trackControlsState,
+                  onSeekCompleted: widget.onSeekCompleted,
                   focusNodes: _trackControlFocusNodes,
                   onFocusChange: _onFocusChange,
                   onNavigateLeft: navigateFromTrackToVolume,

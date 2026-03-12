@@ -97,9 +97,6 @@ class _TranslationsAuthJa implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Plexでサインイン';
 	@override String get showQRCode => 'QRコードを表示';
 	@override String get authenticate => '認証';
-	@override String get debugEnterToken => 'デバッグ: Plexトークンを入力';
-	@override String get plexTokenLabel => 'Plex認証トークン';
-	@override String get plexTokenHint => 'Plex.tvトークンを入力';
 	@override String get authenticationTimeout => '認証がタイムアウトしました。もう一度お試しください。';
 	@override String get scanQRToSignIn => 'このQRコードをスキャンしてサインイン';
 	@override String get waitingForAuth => '認証を待機中...\nブラウザでサインインを完了してください。';
@@ -300,6 +297,11 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'クレジットを自動的にスキップして次のエピソードを再生';
 	@override String get autoSkipDelay => '自動スキップの遅延';
 	@override String autoSkipDelayDescription({required Object seconds}) => '自動スキップまで${seconds}秒待機';
+	@override String get introPattern => 'イントロマーカーパターン';
+	@override String get introPatternDescription => 'チャプタータイトルのイントロマーカーに一致する正規表現パターン';
+	@override String get creditsPattern => 'クレジットマーカーパターン';
+	@override String get creditsPatternDescription => 'チャプタータイトルのクレジットマーカーに一致する正規表現パターン';
+	@override String get invalidRegex => '無効な正規表現';
 	@override String get downloads => 'ダウンロード';
 	@override String get downloadLocationDescription => 'ダウンロードコンテンツの保存場所を選択';
 	@override String get downloadLocationDefault => 'デフォルト（アプリストレージ）';
@@ -1311,9 +1313,6 @@ extension on TranslationsJa {
 			'auth.signInWithPlex' => 'Plexでサインイン',
 			'auth.showQRCode' => 'QRコードを表示',
 			'auth.authenticate' => '認証',
-			'auth.debugEnterToken' => 'デバッグ: Plexトークンを入力',
-			'auth.plexTokenLabel' => 'Plex認証トークン',
-			'auth.plexTokenHint' => 'Plex.tvトークンを入力',
 			'auth.authenticationTimeout' => '認証がタイムアウトしました。もう一度お試しください。',
 			'auth.scanQRToSignIn' => 'このQRコードをスキャンしてサインイン',
 			'auth.waitingForAuth' => '認証を待機中...\nブラウザでサインインを完了してください。',
@@ -1478,6 +1477,11 @@ extension on TranslationsJa {
 			'settings.autoSkipCreditsDescription' => 'クレジットを自動的にスキップして次のエピソードを再生',
 			'settings.autoSkipDelay' => '自動スキップの遅延',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '自動スキップまで${seconds}秒待機',
+			'settings.introPattern' => 'イントロマーカーパターン',
+			'settings.introPatternDescription' => 'チャプタータイトルのイントロマーカーに一致する正規表現パターン',
+			'settings.creditsPattern' => 'クレジットマーカーパターン',
+			'settings.creditsPatternDescription' => 'チャプタータイトルのクレジットマーカーに一致する正規表現パターン',
+			'settings.invalidRegex' => '無効な正規表現',
 			'settings.downloads' => 'ダウンロード',
 			'settings.downloadLocationDescription' => 'ダウンロードコンテンツの保存場所を選択',
 			'settings.downloadLocationDefault' => 'デフォルト（アプリストレージ）',
@@ -1817,10 +1821,10 @@ extension on TranslationsJa {
 			'liveTv.noPrograms' => '番組データがありません',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'ライブ',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => '新着',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => '新着',
 			'liveTv.reloadGuide' => '番組表を再読込',
 			'liveTv.allChannels' => 'すべてのチャンネル',
 			'liveTv.now' => '現在',

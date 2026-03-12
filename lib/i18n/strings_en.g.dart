@@ -109,15 +109,6 @@ class TranslationsAuthEn {
 	/// en: 'Authenticate'
 	String get authenticate => 'Authenticate';
 
-	/// en: 'Debug: Enter Plex Token'
-	String get debugEnterToken => 'Debug: Enter Plex Token';
-
-	/// en: 'Plex Auth Token'
-	String get plexTokenLabel => 'Plex Auth Token';
-
-	/// en: 'Enter your Plex.tv token'
-	String get plexTokenHint => 'Enter your Plex.tv token';
-
 	/// en: 'Authentication timed out. Please try again.'
 	String get authenticationTimeout => 'Authentication timed out. Please try again.';
 
@@ -645,6 +636,21 @@ class TranslationsSettingsEn {
 
 	/// en: 'Wait ${seconds} seconds before auto-skipping'
 	String autoSkipDelayDescription({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping';
+
+	/// en: 'Intro Marker Pattern'
+	String get introPattern => 'Intro Marker Pattern';
+
+	/// en: 'Regex pattern to match intro markers in chapter titles'
+	String get introPatternDescription => 'Regex pattern to match intro markers in chapter titles';
+
+	/// en: 'Credits Marker Pattern'
+	String get creditsPattern => 'Credits Marker Pattern';
+
+	/// en: 'Regex pattern to match credits markers in chapter titles'
+	String get creditsPatternDescription => 'Regex pattern to match credits markers in chapter titles';
+
+	/// en: 'Invalid regular expression'
+	String get invalidRegex => 'Invalid regular expression';
 
 	/// en: 'Downloads'
 	String get downloads => 'Downloads';
@@ -2938,9 +2944,6 @@ extension on Translations {
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
-			'auth.debugEnterToken' => 'Debug: Enter Plex Token',
-			'auth.plexTokenLabel' => 'Plex Auth Token',
-			'auth.plexTokenHint' => 'Enter your Plex.tv token',
 			'auth.authenticationTimeout' => 'Authentication timed out. Please try again.',
 			'auth.scanQRToSignIn' => 'Scan this QR code to sign in',
 			'auth.waitingForAuth' => 'Waiting for authentication...\nPlease complete sign-in in your browser.',
@@ -3105,6 +3108,11 @@ extension on Translations {
 			'settings.autoSkipCreditsDescription' => 'Automatically skip credits and play next episode',
 			'settings.autoSkipDelay' => 'Auto Skip Delay',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping',
+			'settings.introPattern' => 'Intro Marker Pattern',
+			'settings.introPatternDescription' => 'Regex pattern to match intro markers in chapter titles',
+			'settings.creditsPattern' => 'Credits Marker Pattern',
+			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
+			'settings.invalidRegex' => 'Invalid regular expression',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Choose where to store downloaded content',
 			'settings.downloadLocationDefault' => 'Default (App Storage)',
@@ -3444,10 +3452,10 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NEW',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.allChannels' => 'All Channels',
 			'liveTv.now' => 'Now',

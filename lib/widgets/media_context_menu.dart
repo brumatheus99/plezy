@@ -7,9 +7,12 @@ import '../services/plex_client.dart';
 import '../services/play_queue_launcher.dart';
 import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
+import '../utils/content_utils.dart';
 import '../providers/download_provider.dart';
+import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/offline_watch_provider.dart';
+import '../providers/user_profile_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
@@ -21,7 +24,6 @@ import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
-import '../screens/season_detail_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
@@ -135,6 +137,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // Check if we should use bottom sheet (on iOS and Android)
     final useBottomSheet = Platform.isIOS || Platform.isAndroid;
 
+    // Check if user has admin privileges (server owned + admin or single user)
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    final server = _itemServerId != null ? multiServerProvider.serverManager.getServer(_itemServerId!) : null;
+    final currentUser = context.read<UserProfileProvider>().currentUser;
+    final isAdmin = server?.owned == true && (currentUser == null || currentUser.admin);
+
     // Build menu actions
     final menuActions = <_MenuAction>[];
 
@@ -190,11 +198,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
-      // Edit Metadata (for movies, shows, seasons, and episodes)
-      if (mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season ||
-          mediaType == PlexMediaType.episode) {
+      // Edit Metadata (for movies, shows, seasons, and episodes) — admin only
+      if (isAdmin &&
+          (mediaType == PlexMediaType.movie ||
+              mediaType == PlexMediaType.show ||
+              mediaType == PlexMediaType.season ||
+              mediaType == PlexMediaType.episode)) {
         menuActions.add(
           _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
@@ -211,12 +220,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Go to Series (for episodes and seasons) — hide if already on that series' detail screen,
-      // or on a season screen belonging to the same series
+      // Go to Series (for episodes and seasons) — hide if already on that series' detail screen
       final ancestorMediaDetail = context.findAncestorWidgetOfExactType<MediaDetailScreen>();
-      final ancestorSeasonDetail = context.findAncestorWidgetOfExactType<SeasonDetailScreen>();
-      final ancestorSeriesKey =
-          ancestorMediaDetail?.metadata.ratingKey ?? ancestorSeasonDetail?.season.parentRatingKey;
+      final ancestorMeta = ancestorMediaDetail?.metadata;
+      final ancestorSeriesKey = ancestorMeta != null && ancestorMeta.isSeason
+          ? ancestorMeta.parentRatingKey
+          : ancestorMeta?.ratingKey;
       // For episodes, the show key is grandparentRatingKey; for seasons, it's parentRatingKey
       final itemSeriesKey =
           mediaType == PlexMediaType.episode ? metadata.grandparentRatingKey : metadata.parentRatingKey;
@@ -226,11 +235,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
       }
 
-      // Go to Season (for episodes) — hide if already on that season's detail screen
+      // Go to Season (for episodes) — hide if already viewing that season's MediaDetailScreen
       if (mediaType == PlexMediaType.episode &&
           metadata.parentTitle != null &&
-          context.findAncestorWidgetOfExactType<SeasonDetailScreen>()?.season.ratingKey !=
-              metadata.parentRatingKey) {
+          !(ancestorMeta != null &&
+              ancestorMeta.isSeason &&
+              ancestorMeta.ratingKey == metadata.parentRatingKey)) {
         menuActions.add(
           _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
@@ -289,11 +299,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo));
       }
 
-      // Delete media item (for episodes, movies, shows, and seasons)
-      if (mediaType == PlexMediaType.episode ||
-          mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season) {
+      // Delete media item (for episodes, movies, shows, and seasons) — admin only
+      if (isAdmin &&
+          (mediaType == PlexMediaType.episode ||
+              mediaType == PlexMediaType.movie ||
+              mediaType == PlexMediaType.show ||
+              mediaType == PlexMediaType.season)) {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
@@ -343,16 +354,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
 
     try {
-      final client = _getClientForItem();
-
       if (!context.mounted) return;
-
-      // Check if we're in offline mode for watch actions
-      final offlineModeProvider = context.read<OfflineModeProvider>();
-      final isOffline = offlineModeProvider.isOffline;
 
       switch (selected) {
         case 'watch':
+          final isOffline = context.read<OfflineModeProvider>().isOffline;
           if (isOffline && metadata?.serverId != null) {
             // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
@@ -365,13 +371,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Pass metadata to emit WatchStateEvent for cross-screen updates
             await _executeAction(
               context,
-              () => client.markAsWatched(metadata!.ratingKey, metadata: metadata),
+              () => _getClientForItem().markAsWatched(metadata!.ratingKey, metadata: metadata),
               t.messages.markedAsWatched,
             );
           }
           break;
 
         case 'unwatch':
+          final isOffline = context.read<OfflineModeProvider>().isOffline;
           if (isOffline && metadata?.serverId != null) {
             // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
@@ -384,7 +391,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Pass metadata to emit WatchStateEvent for cross-screen updates
             await _executeAction(
               context,
-              () => client.markAsUnwatched(metadata!.ratingKey, metadata: metadata),
+              () => _getClientForItem().markAsUnwatched(metadata!.ratingKey, metadata: metadata),
               t.messages.markedAsUnwatched,
             );
           }
@@ -395,6 +402,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // This preserves the progression for partially watched items
           // and doesn't mark unwatched next episodes as watched
           try {
+            final client = _getClientForItem();
             await client.removeFromOnDeck(metadata!.ratingKey);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
@@ -414,7 +422,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'rate':
           if (context.mounted) {
-            await _showRatingSheet(context, metadata!, client);
+            try {
+              final client = _getClientForItem();
+              await _showRatingSheet(context, metadata!, client);
+            } catch (e) {
+              if (context.mounted) {
+                showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+              }
+            }
           }
           break;
 
@@ -447,10 +462,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
         case 'season':
           didNavigate = true;
+          // Navigate to the show with the season tab pre-selected
+          final seasonParentKey = metadata!.mediaType == PlexMediaType.episode
+              ? metadata.grandparentRatingKey
+              : metadata.parentRatingKey;
+          final seasonIndex = metadata.parentIndex;
           await _navigateToRelated(
             context,
-            metadata!.parentRatingKey,
-            (metadata) => SeasonDetailScreen(season: metadata),
+            seasonParentKey,
+            (show) => MediaDetailScreen(metadata: show, initialSeasonIndex: seasonIndex),
             t.messages.errorLoadingSeason,
           );
           break;
@@ -1420,6 +1440,10 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
               top: top,
               child: Material(
                 elevation: 8,
+                color: Color.alphaBlend(
+                  Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                  Theme.of(context).colorScheme.surface,
+                ),
                 borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                 clipBehavior: Clip.antiAlias,
                 child: ConstrainedBox(

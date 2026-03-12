@@ -70,6 +70,18 @@ import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 import '../watch_together/widgets/watch_together_overlay.dart';
 
+Future<void> _setWakelock(bool enabled) async {
+  try {
+    if (enabled) {
+      await WakelockPlus.enable();
+    } else {
+      await WakelockPlus.disable();
+    }
+  } catch (e) {
+    appLogger.w('Wakelock ${enabled ? 'enable' : 'disable'} failed: $e');
+  }
+}
+
 class VideoPlayerScreen extends StatefulWidget {
   final PlexMetadata metadata;
   final AudioTrack? preferredAudioTrack;
@@ -140,10 +152,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
+  StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;
   StreamSubscription<bool>? _mediaControlsPlayingSubscription;
   StreamSubscription<Duration>? _mediaControlsPositionSubscription;
   StreamSubscription<double>? _mediaControlsRateSubscription;
+  StreamSubscription<bool>? _mediaControlsSeekableSubscription;
+  StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
   bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
   bool _isDisposingForNavigation = false;
   bool _waitingForExternalSubsTrackSelection = false;
@@ -344,36 +359,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (_shouldSkipForPip) break;
         // Clear media controls when app truly goes to background
         // (we don't support background playback)
-        OsMediaControls.clear();
+        _mediaControlsManager?.clear();
         // Disable wakelock when app goes to background
-        WakelockPlus.disable();
+        _setWakelock(false);
         appLogger.d('Media controls cleared and wakelock disabled due to app being paused/backgrounded');
         break;
       case AppLifecycleState.resumed:
         // Restore media controls and wakelock when app is resumed
         if (_isPlayerInitialized && mounted) {
-          // Re-enable wakelock since we're back in the video player
-          WakelockPlus.enable();
-
-          // Restore media metadata (only in online mode - requires client for artwork URLs)
-          if (!widget.isOffline && _mediaControlsManager != null) {
-            final client = _getClientForMetadata(context);
-            _mediaControlsManager!.updateMetadata(
-              metadata: widget.metadata,
-              client: client,
-              duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
-            );
-          }
-
-          // Resume playback if it was playing before going inactive
-          if (_wasPlayingBeforeInactive && player != null) {
-            player!.play();
-            _wasPlayingBeforeInactive = false;
-            appLogger.d('Video resumed after returning from inactive state');
-          }
-
-          _updateMediaControlsPlaybackState();
-          appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+          unawaited(_restoreMediaControlsAfterResume());
         }
         break;
       case AppLifecycleState.detached:
@@ -553,7 +547,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
 
         // Enable wakelock to prevent screen from turning off during playback
-        WakelockPlus.enable();
+        _setWakelock(true);
         appLogger.d('Wakelock enabled for video playback');
       }
 
@@ -589,6 +583,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
 
+      // Listen to error-level log messages for user-visible snackbars
+      _logSubscription = player!.streams.log
+          .where((log) => log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal)
+          .listen(_onPlayerLogError);
+
       // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
       if (Platform.isAndroid && useExoPlayer) {
         _backendSwitchedSubscription = player!.streams.backendSwitched.listen((_) => _onBackendSwitched());
@@ -599,8 +598,28 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _isBuffering.value = isBuffering;
       });
 
+      // When server comes back online while buffering, force mpv to reconnect
+      // immediately instead of waiting for ffmpeg's exponential backoff
+      if (!widget.isOffline && !widget.isLive) {
+        final serverId = widget.metadata.serverId;
+        if (serverId != null) {
+          final serverManager = context.read<MultiServerProvider>().serverManager;
+          bool wasOffline = false;
+          _serverStatusSubscription = serverManager.statusStream.listen((statusMap) {
+            final isOnline = statusMap[serverId] == true;
+            if (!isOnline) {
+              wasOffline = true;
+            } else if (wasOffline && _isBuffering.value) {
+              wasOffline = false;
+              _forceStreamReconnect();
+            }
+          });
+        }
+      }
+
       // Listen to playback restart to detect first frame ready
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
+        _lastLogError = null;
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
           Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
@@ -750,34 +769,36 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Set up media control event handling
     _mediaControlSubscription = _mediaControlsManager!.controlEvents.listen((event) {
+      final currentPlayer = player;
+      if (currentPlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
+
       if (event is PlayEvent) {
         appLogger.d('Media control: Play event received');
-        if (player != null) {
-          player!.play();
-          _wasPlayingBeforeInactive = false;
-          appLogger.d('Cleared _wasPlayingBeforeInactive due to manual play via media controls');
-          _updateMediaControlsPlaybackState();
-        }
+        currentPlayer!.play();
+        _wasPlayingBeforeInactive = false;
+        _updateMediaControlsPlaybackState();
       } else if (event is PauseEvent) {
         appLogger.d('Media control: Pause event received');
-        if (player != null) {
-          player!.pause();
-          appLogger.d('Video paused via media controls');
-          _updateMediaControlsPlaybackState();
+        currentPlayer!.pause();
+        _updateMediaControlsPlaybackState();
+      } else if (event is TogglePlayPauseEvent) {
+        appLogger.d('Media control: Toggle play/pause event received');
+        if (currentPlayer!.state.playing) {
+          currentPlayer.pause();
+        } else {
+          currentPlayer.play();
+          _wasPlayingBeforeInactive = false;
         }
+        _updateMediaControlsPlaybackState();
       } else if (event is SeekEvent) {
         appLogger.d('Media control: Seek event received to ${event.position}');
-        player?.seek(event.position);
+        unawaited(currentPlayer!.seek(clampSeekPosition(currentPlayer, event.position)));
       } else if (event is NextTrackEvent) {
         appLogger.d('Media control: Next track event received');
-        if (_nextEpisode != null) {
-          _playNext();
-        }
+        if (_nextEpisode != null) _playNext();
       } else if (event is PreviousTrackEvent) {
         appLogger.d('Media control: Previous track event received');
-        if (_previousEpisode != null) {
-          _playPrevious();
-        }
+        if (_previousEpisode != null) _playPrevious();
       }
     });
 
@@ -790,15 +811,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     if (!mounted) return;
 
-    // Set controls enabled based on content type
-    final playbackState = context.read<PlaybackStateProvider>();
-    final isEpisode = widget.metadata.isEpisode;
-    final isInPlaylist = playbackState.isPlaylistActive;
-
-    await _mediaControlsManager!.setControlsEnabled(
-      canGoNext: isEpisode || isInPlaylist,
-      canGoPrevious: isEpisode || isInPlaylist,
-    );
+    await _syncMediaControlsAvailability();
 
     // Listen to playing state and update media controls
     _mediaControlsPlayingSubscription = player!.streams.playing.listen((isPlaying) {
@@ -818,6 +831,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Listen to playback rate changes for Discord Rich Presence
     _mediaControlsRateSubscription = player!.streams.rate.listen((rate) {
       DiscordRPCService.instance.updatePlaybackSpeed(rate);
+    });
+
+    _mediaControlsSeekableSubscription = player!.streams.seekable.listen((_) {
+      unawaited(_syncMediaControlsAvailability());
     });
 
     // Start Discord Rich Presence for current media
@@ -1061,6 +1078,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         resumePosition ??= widget.metadata.viewOffset != null
             ? Duration(milliseconds: widget.metadata.viewOffset!)
             : null;
+
+        // Enable FFmpeg auto-reconnect for VOD streams (covers network drops up to 10 min)
+        if (!widget.isOffline && !widget.isLive) {
+          await player!.setProperty('stream-lavf-o',
+              'reconnect=1,reconnect_on_network_error=1,reconnect_streamed=1,reconnect_delay_max=600');
+        }
 
         // If we have external subtitles, open paused to add them before playback starts.
         // This prevents a race condition on Android where adding subtitle tracks
@@ -1515,12 +1538,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onSeekForward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      seekWithClamping(player!, Duration(seconds: settings.getSeekTimeSmall()));
+      final target = clampSeekPosition(player!, player!.state.position + Duration(seconds: settings.getSeekTimeSmall()));
+      await player!.seek(target);
     };
     receiver.onSeekBackward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      seekWithClamping(player!, Duration(seconds: -settings.getSeekTimeSmall()));
+      final target = clampSeekPosition(player!, player!.state.position - Duration(seconds: settings.getSeekTimeSmall()));
+      await player!.seek(target);
     };
     receiver.onVolumeUp = () async {
       if (player == null) return;
@@ -1741,10 +1766,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _positionSubscription?.cancel();
     _playbackRestartSubscription?.cancel();
     _backendSwitchedSubscription?.cancel();
+    _logSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
     _mediaControlsPlayingSubscription?.cancel();
     _mediaControlsPositionSubscription?.cancel();
     _mediaControlsRateSubscription?.cancel();
+    _mediaControlsSeekableSubscription?.cancel();
+    _serverStatusSubscription?.cancel();
 
     // Cancel auto-play timer
     _autoPlayTimer?.cancel();
@@ -1778,7 +1806,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     // Disable wakelock when leaving the video player
-    WakelockPlus.disable();
+    _setWakelock(false);
     appLogger.d('Wakelock disabled');
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
@@ -1831,15 +1859,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
-    // Toggle wakelock based on playback state
+    _setWakelock(isPlaying);
+
     if (isPlaying) {
-      WakelockPlus.enable();
       // Force a texture refresh on resume to unstick stale frames
       // (Linux/macOS texture registrars can miss frame-available
       // notifications after extended pause periods)
       player?.updateFrame();
-    } else {
-      WakelockPlus.disable();
     }
 
     // Send timeline update when playback state changes
@@ -1893,9 +1919,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (completed &&
-        _nextEpisode == null &&
-        !_completionTriggered) {
+    } else if (completed && _nextEpisode == null && !_completionTriggered) {
       _completionTriggered = true;
       _handleBackButton();
     }
@@ -1903,9 +1927,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   void _onPlayerError(String error) {
     appLogger.e('[Player ERROR] $error');
-    if (!mounted) return;
+    if (!mounted || _isExiting.value) return;
+    showGlobalErrorSnackBar(_lastLogError ?? error);
+    _handleBackButton();
+  }
 
-    showErrorSnackBar(context, t.messages.failedPlayback(action: 'play', error: error));
+  String? _lastLogError;
+
+  void _onPlayerLogError(PlayerLog log) {
+    appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
+    _lastLogError = log.text.trim();
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV
@@ -1918,6 +1949,58 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   // OS Media Controls Integration
+
+  Future<void> _syncMediaControlsAvailability() async {
+    final manager = _mediaControlsManager;
+    final currentPlayer = player;
+    if (!mounted || manager == null || currentPlayer == null) return;
+
+    final playbackState = context.read<PlaybackStateProvider>();
+    final canNavigateEpisodes = widget.metadata.isEpisode || playbackState.isPlaylistActive;
+    final canSeek = !widget.isLive && currentPlayer.state.seekable;
+
+    if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
+
+    await manager.setControlsEnabled(
+      canGoNext: canNavigateEpisodes,
+      canGoPrevious: canNavigateEpisodes,
+      canSeek: canSeek,
+    );
+  }
+
+  Future<void> _restoreMediaControlsAfterResume() async {
+    if (!_isPlayerInitialized || !mounted) return;
+
+    _setWakelock(true);
+
+    final manager = _mediaControlsManager;
+    final currentPlayer = player;
+    if (manager != null && currentPlayer != null) {
+      final client = widget.isOffline ? null : _getClientForMetadata(context);
+      await manager.updateMetadata(
+        metadata: widget.metadata,
+        client: client,
+        duration: widget.metadata.duration != null ? Duration(milliseconds: widget.metadata.duration!) : null,
+      );
+      await _syncMediaControlsAvailability();
+    }
+
+    if (!mounted || currentPlayer != player || currentPlayer == null) return;
+
+    if (_wasPlayingBeforeInactive) {
+      try {
+        await currentPlayer.play();
+        appLogger.d('Video resumed after returning from inactive state');
+      } catch (e) {
+        appLogger.w('Failed to resume playback after returning from inactive state', error: e);
+      } finally {
+        _wasPlayingBeforeInactive = false;
+      }
+    }
+
+    _updateMediaControlsPlaybackState();
+    appLogger.d('Media controls restored and wakelock re-enabled on app resume');
+  }
 
   /// Wrapper method to update media controls playback state
   void _updateMediaControlsPlaybackState() {
@@ -2019,16 +2102,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
+  /// Force mpv to reconnect its HTTP stream by seeking to the current position.
+  /// This bypasses ffmpeg's exponential reconnect backoff when the app detects
+  /// that network connectivity has been restored.
+  void _forceStreamReconnect() {
+    final p = player;
+    if (p == null || !_isPlayerInitialized) return;
+    final pos = p.state.position;
+    appLogger.i('Network restored while buffering, forcing stream reconnect at ${pos.inSeconds}s');
+    p.seek(pos);
+  }
+
   /// Configure MPV/FFmpeg options for live streaming resilience.
   /// Enables automatic reconnection on EOF and network errors.
   Future<void> _setLiveStreamOptions() async {
     final p = player!;
     // FFmpeg HTTP protocol reconnection
-    await p.setProperty('stream-lavf-o-append', 'reconnect=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_at_eof=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_streamed=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_on_network_error=1');
-    await p.setProperty('stream-lavf-o-append', 'reconnect_delay_max=30');
+    await p.setProperty('stream-lavf-o',
+        'reconnect=1,reconnect_at_eof=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=30');
     // Demuxer: retry up to 1000 times on stream reload failures
     await p.setProperty('demuxer-lavf-o', 'max_reload=1000');
     await p.setProperty('force-seekable', 'no');
@@ -2090,6 +2181,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _startLiveTimelineUpdates();
     } catch (e) {
       appLogger.e('Failed to switch channel', error: e);
+      if (mounted) showErrorSnackBar(context, e.toString());
     } finally {
       _isSwitchingChannel = false;
     }

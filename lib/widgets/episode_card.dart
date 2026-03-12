@@ -2,337 +2,27 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../../services/plex_client.dart';
-import '../main.dart';
+import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
-import '../focus/key_event_utils.dart';
-import '../focus/dpad_navigator.dart';
-import '../focus/input_mode_tracker.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/content_utils.dart';
-import '../services/download_storage_service.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/plex_optimized_image.dart';
 import '../models/plex_metadata.dart';
 import '../utils/platform_detector.dart';
-import '../utils/video_player_navigation.dart';
 import '../utils/formatters.dart';
-import '../widgets/desktop_app_bar.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
-import '../mixins/item_updatable.dart';
-import '../mixins/watch_state_aware.dart';
-import '../mixins/deletion_aware.dart';
-import '../mixins/mounted_set_state_mixin.dart';
-import '../mixins/server_bound_media_mixin.dart';
-import '../utils/watch_state_notifier.dart';
-import '../utils/deletion_notifier.dart';
 import '../theme/mono_tokens.dart';
-import '../i18n/strings.g.dart';
-
-class SeasonDetailScreen extends StatefulWidget {
-  final PlexMetadata season;
-  final bool isOffline;
-
-  const SeasonDetailScreen({super.key, required this.season, this.isOffline = false});
-
-  @override
-  State<SeasonDetailScreen> createState() => _SeasonDetailScreenState();
-}
-
-class _SeasonDetailScreenState extends State<SeasonDetailScreen>
-    with ItemUpdatable, WatchStateAware, DeletionAware, RouteAware, MountedSetStateMixin, ServerBoundMediaMixin {
-  PlexClient? _client;
-
-  @override
-  PlexClient get client {
-    final client = _client;
-    if (client == null) {
-      throw StateError('PlexClient unavailable for season ${widget.season.ratingKey}');
-    }
-    return client;
-  }
-
-  List<PlexMetadata> _episodes = [];
-  bool _isLoadingEpisodes = false;
-  bool _watchStateChanged = false;
-  // Capture keyboard mode once at init to avoid rebuild dependency
-  bool _initialKeyboardMode = false;
-  bool _suppressNextBackKeyUp = false;
-  bool _routeSubscribed = false;
-
-  @override
-  PlexMetadata get serverBoundMetadata => widget.season;
-
-  @override
-  bool get isServerBoundOffline => widget.isOffline;
-
-  // WatchStateAware: watch all episode ratingKeys
-  @override
-  Set<String>? get watchedRatingKeys => _episodes.map((e) => e.ratingKey).toSet();
-
-  @override
-  String? get watchStateServerId => serverBoundServerId;
-
-  @override
-  Set<String>? get watchedGlobalKeys {
-    final serverId = serverBoundServerId;
-    if (serverId == null) return null;
-
-    return _episodes.map((e) => toServerBoundGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
-  }
-
-  @override
-  void onWatchStateChanged(WatchStateEvent event) {
-    // Update the affected episode
-    if (!widget.isOffline && _client != null) {
-      updateItem(event.ratingKey);
-    }
-  }
-
-  @override
-  Set<String>? get deletionRatingKeys {
-    final keys = _episodes.map((e) => e.ratingKey).toSet();
-    keys.add(widget.season.ratingKey);
-    return keys;
-  }
-
-  @override
-  String? get deletionServerId => serverBoundServerId;
-
-  @override
-  Set<String>? get deletionGlobalKeys {
-    final serverId = serverBoundServerId;
-    if (serverId == null) return null;
-
-    final keys = _episodes.map((e) => toServerBoundGlobalKey(e.ratingKey, serverId: e.serverId ?? serverId)).toSet();
-    keys.add(toServerBoundGlobalKey(widget.season.ratingKey, serverId: serverId));
-    return keys;
-  }
-
-  @override
-  void onDeletionEvent(DeletionEvent event) {
-    // Download-only deletions should only remove items when viewing offline content
-    if (event.isDownloadOnly && !widget.isOffline) return;
-
-    // If we have an episode that matches the rating key exactly, then remove it from our list
-    final index = _episodes.indexWhere((e) => e.ratingKey == event.ratingKey);
-    if (index != -1) {
-      setState(() {
-        _episodes.removeAt(index);
-      });
-      // If that was the last episode, navigate back to the show view
-      if (_episodes.isEmpty && mounted) {
-        Navigator.of(context).pop();
-      }
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize the client once in initState
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Capture keyboard mode once to avoid rebuild dependency when mode changes
-      _initialKeyboardMode = InputModeTracker.isKeyboardMode(context);
-      _client = getServerBoundClient(context);
-      _loadEpisodes();
-    });
-  }
-
-  Future<void> _loadEpisodes() async {
-    setState(() {
-      _isLoadingEpisodes = true;
-    });
-
-    if (widget.isOffline) {
-      // Load episodes from downloads
-      _loadEpisodesFromDownloads();
-      return;
-    }
-
-    try {
-      final client = _client;
-      if (client == null) {
-        setStateIfMounted(() {
-          _isLoadingEpisodes = false;
-        });
-        return;
-      }
-
-      // Episodes are automatically tagged with server info by PlexClient
-      final episodes = await client.getChildren(widget.season.ratingKey);
-
-      setStateIfMounted(() {
-        _episodes = episodes;
-        _isLoadingEpisodes = false;
-      });
-    } catch (e) {
-      setStateIfMounted(() {
-        _isLoadingEpisodes = false;
-      });
-    }
-  }
-
-  /// Load episodes from downloaded content
-  void _loadEpisodesFromDownloads() {
-    final downloadProvider = context.read<DownloadProvider>();
-
-    // Get all downloaded episodes for the show (grandparentRatingKey)
-    final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(widget.season.parentRatingKey ?? '');
-
-    // Filter to only this season's episodes
-    final seasonEpisodes = allEpisodes.where((ep) => ep.parentIndex == widget.season.index).toList()
-      ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
-
-    setState(() {
-      _episodes = seasonEpisodes;
-      _isLoadingEpisodes = false;
-    });
-  }
-
-  @override
-  Future<void> updateItem(String ratingKey) async {
-    if (_client == null) {
-      return;
-    }
-    _watchStateChanged = true;
-    await super.updateItem(ratingKey);
-  }
-
-  @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    final index = _episodes.indexWhere((item) => item.ratingKey == ratingKey);
-    if (index != -1) {
-      _episodes[index] = updatedMetadata;
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_routeSubscribed) return;
-    final route = ModalRoute.of(context);
-    if (route is PageRoute) {
-      routeObserver.subscribe(this, route);
-      _routeSubscribed = true;
-    }
-  }
-
-  @override
-  void dispose() {
-    if (_routeSubscribed) {
-      routeObserver.unsubscribe(this);
-      _routeSubscribed = false;
-    }
-    super.dispose();
-  }
-
-  @override
-  void didPopNext() {
-    // Returning from a child route (e.g., video player).
-    // Suppress the first BACK KeyUp which can otherwise pop this route.
-    _suppressNextBackKeyUp = true;
-  }
-
-  KeyEventResult _handleBackKeyEvent(KeyEvent event) {
-    if (_suppressNextBackKeyUp && event is KeyUpEvent && event.logicalKey.isBackKey) {
-      _suppressNextBackKeyUp = false;
-      return KeyEventResult.handled;
-    }
-    return handleBackKeyNavigation(context, event, result: _watchStateChanged);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final content = Focus(
-      onKeyEvent: (_, event) => _handleBackKeyEvent(event),
-      child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            CustomAppBar(
-              title: Text(widget.season.title),
-              pinned: true,
-              onBackPressed: () => Navigator.pop(context, _watchStateChanged),
-            ),
-            if (_isLoadingEpisodes)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-            else if (_episodes.isEmpty)
-              SliverFillRemaining(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: tokens(context).textMuted),
-                      const SizedBox(height: 16),
-                      Text(
-                        t.messages.noEpisodesFoundGeneral,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: tokens(context).textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final episode = _episodes[index];
-                  // Get local poster path for offline mode
-                  String? localPosterPath;
-                  if (widget.isOffline && episode.serverId != null) {
-                    final downloadProvider = context.read<DownloadProvider>();
-                    final globalKey = episode.globalKey;
-                    // Get the artwork reference and convert to local file path
-                    final artworkRef = downloadProvider.getArtworkPaths(globalKey);
-                    localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
-                  }
-                  return _EpisodeCard(
-                    episode: episode,
-                    client: _client,
-                    isOffline: widget.isOffline,
-                    localPosterPath: localPosterPath,
-                    autofocus: index == 0 && _initialKeyboardMode,
-                    onTap: () async {
-                      await navigateToVideoPlayerWithRefresh(
-                        context,
-                        metadata: episode,
-                        isOffline: widget.isOffline,
-                        onRefresh: _loadEpisodes,
-                      );
-                    },
-                    onRefresh: widget.isOffline ? null : updateItem,
-                    onListRefresh: widget.isOffline ? null : _loadEpisodes,
-                  );
-                }, childCount: _episodes.length),
-              ),
-            SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom)),
-          ],
-        ),
-      ),
-    );
-
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
-    if (!blockSystemBack) {
-      return content;
-    }
-
-    return PopScope(
-      canPop: false, // Prevent system back from double-popping on Android keyboard/TV
-      // ignore: no-empty-block - required callback, blocks system back on Android TV
-      onPopInvokedWithResult: (didPop, result) {},
-      child: content,
-    );
-  }
-}
+import '../../services/plex_client.dart';
 
 /// Episode card widget with D-pad long-press support
-class _EpisodeCard extends StatefulWidget {
+class EpisodeCard extends StatefulWidget {
   final PlexMetadata episode;
   final PlexClient? client;
   final VoidCallback onTap;
@@ -341,8 +31,11 @@ class _EpisodeCard extends StatefulWidget {
   final bool autofocus;
   final bool isOffline;
   final String? localPosterPath;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateUp;
 
-  const _EpisodeCard({
+  const EpisodeCard({
+    super.key,
     required this.episode,
     this.client,
     required this.onTap,
@@ -351,13 +44,15 @@ class _EpisodeCard extends StatefulWidget {
     this.autofocus = false,
     this.isOffline = false,
     this.localPosterPath,
+    this.focusNode,
+    this.onNavigateUp,
   });
 
   @override
-  State<_EpisodeCard> createState() => _EpisodeCardState();
+  State<EpisodeCard> createState() => _EpisodeCardState();
 }
 
-class _EpisodeCardState extends State<_EpisodeCard> {
+class _EpisodeCardState extends State<EpisodeCard> {
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
   Offset? _tapPosition;
 
@@ -416,33 +111,37 @@ class _EpisodeCardState extends State<_EpisodeCard> {
 
     final hasActiveProgress = hasProgress && widget.episode.viewOffset! < widget.episode.duration!;
 
-    return FocusableWrapper(
-      autofocus: widget.autofocus,
-      enableLongPress: true,
-      onSelect: widget.onTap,
-      onLongPress: _showContextMenu,
-      borderRadius: 0, // Episode cards have no border radius
-      useBackgroundFocus: true, // Use background color instead of outline
-      disableScale: true, // No scale animation for list items
-      child: MediaContextMenu(
-        key: _contextMenuKey,
-        item: widget.episode,
-        onRefresh: widget.onRefresh,
-        onListRefresh: widget.onListRefresh,
-        onTap: widget.onTap,
-        child: InkWell(
-          key: Key(widget.episode.ratingKey),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: FocusableWrapper(
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        enableLongPress: true,
+        onNavigateUp: widget.onNavigateUp,
+        onSelect: widget.onTap,
+        onLongPress: _showContextMenu,
+        disableScale: true,
+        child: MediaContextMenu(
+          key: _contextMenuKey,
+          item: widget.episode,
+          onRefresh: widget.onRefresh,
+          onListRefresh: widget.onListRefresh,
           onTap: widget.onTap,
-          onTapDown: _storeTapPosition,
-          onLongPress: _showContextMenu,
-          onSecondaryTapDown: _storeTapPosition,
-          onSecondaryTap: _showContextMenu,
-          hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: tokens(context).outline, width: 0.5)),
-            ),
-            padding: const EdgeInsets.all(16),
+          child: InkWell(
+            key: Key(widget.episode.ratingKey),
+            borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
+            onTap: widget.onTap,
+            onTapDown: _storeTapPosition,
+            onLongPress: _showContextMenu,
+            onSecondaryTapDown: _storeTapPosition,
+            onSecondaryTap: _showContextMenu,
+            hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
+              ),
+              padding: const EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -703,6 +402,7 @@ class _EpisodeCardState extends State<_EpisodeCard> {
           ),
         ),
       ),
+    ),
     );
   }
 

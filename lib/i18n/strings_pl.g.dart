@@ -97,9 +97,6 @@ class _TranslationsAuthPl implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Zaloguj się przez Plex';
 	@override String get showQRCode => 'Pokaż kod QR';
 	@override String get authenticate => 'Uwierzytelnienie';
-	@override String get debugEnterToken => 'Debug: Wprowadź token Plex';
-	@override String get plexTokenLabel => 'Token autoryzacji Plex';
-	@override String get plexTokenHint => 'Wprowadź swój token Plex.tv';
 	@override String get authenticationTimeout => 'Upłynął czas uwierzytelniania. Spróbuj ponownie.';
 	@override String get scanQRToSignIn => 'Zeskanuj ten kod QR, aby się zalogować';
 	@override String get waitingForAuth => 'Oczekiwanie na uwierzytelnienie...\nDokończ logowanie w przeglądarce.';
@@ -300,6 +297,11 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek';
 	@override String get autoSkipDelay => 'Opóźnienie automatycznego pomijania';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Czekaj ${seconds} sekund przed automatycznym pominięciem';
+	@override String get introPattern => 'Wzorzec znacznika intro';
+	@override String get introPatternDescription => 'Wyrażenie regularne do rozpoznawania znaczników intro w tytułach rozdziałów';
+	@override String get creditsPattern => 'Wzorzec znacznika napisów końcowych';
+	@override String get creditsPatternDescription => 'Wyrażenie regularne do rozpoznawania znaczników napisów końcowych w tytułach rozdziałów';
+	@override String get invalidRegex => 'Nieprawidłowe wyrażenie regularne';
 	@override String get downloads => 'Pobrania';
 	@override String get downloadLocationDescription => 'Wybierz miejsce przechowywania pobranych treści';
 	@override String get downloadLocationDefault => 'Domyślne (Pamięć aplikacji)';
@@ -1311,9 +1313,6 @@ extension on TranslationsPl {
 			'auth.signInWithPlex' => 'Zaloguj się przez Plex',
 			'auth.showQRCode' => 'Pokaż kod QR',
 			'auth.authenticate' => 'Uwierzytelnienie',
-			'auth.debugEnterToken' => 'Debug: Wprowadź token Plex',
-			'auth.plexTokenLabel' => 'Token autoryzacji Plex',
-			'auth.plexTokenHint' => 'Wprowadź swój token Plex.tv',
 			'auth.authenticationTimeout' => 'Upłynął czas uwierzytelniania. Spróbuj ponownie.',
 			'auth.scanQRToSignIn' => 'Zeskanuj ten kod QR, aby się zalogować',
 			'auth.waitingForAuth' => 'Oczekiwanie na uwierzytelnienie...\nDokończ logowanie w przeglądarce.',
@@ -1478,6 +1477,11 @@ extension on TranslationsPl {
 			'settings.autoSkipCreditsDescription' => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek',
 			'settings.autoSkipDelay' => 'Opóźnienie automatycznego pomijania',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Czekaj ${seconds} sekund przed automatycznym pominięciem',
+			'settings.introPattern' => 'Wzorzec znacznika intro',
+			'settings.introPatternDescription' => 'Wyrażenie regularne do rozpoznawania znaczników intro w tytułach rozdziałów',
+			'settings.creditsPattern' => 'Wzorzec znacznika napisów końcowych',
+			'settings.creditsPatternDescription' => 'Wyrażenie regularne do rozpoznawania znaczników napisów końcowych w tytułach rozdziałów',
+			'settings.invalidRegex' => 'Nieprawidłowe wyrażenie regularne',
 			'settings.downloads' => 'Pobrania',
 			'settings.downloadLocationDescription' => 'Wybierz miejsce przechowywania pobranych treści',
 			'settings.downloadLocationDefault' => 'Domyślne (Pamięć aplikacji)',
@@ -1817,10 +1821,10 @@ extension on TranslationsPl {
 			'liveTv.noPrograms' => 'Brak danych o programach',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kn. ${number}',
 			'liveTv.live' => 'NA ŻYWO',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NOWE',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NOWE',
 			'liveTv.reloadGuide' => 'Odśwież przewodnik',
 			'liveTv.allChannels' => 'Wszystkie kanały',
 			'liveTv.now' => 'Teraz',

@@ -172,13 +172,11 @@ class WatchTogetherPeerService with KeepaliveMixin {
           }
 
         case 'message':
-          final from = msg['from'] as String?;
           final payload = msg['payload'];
           if (payload != null) {
             try {
               final payloadStr = payload is String ? payload : jsonEncode(payload);
               final syncMsg = SyncMessage.fromJson(payloadStr);
-              appLogger.d('WatchTogether: Received ${syncMsg.type} from $from');
               _safeAdd(_messageReceivedController, syncMsg);
             } catch (e) {
               appLogger.e('WatchTogether: Failed to parse sync message payload', error: e);
@@ -369,14 +367,12 @@ class WatchTogetherPeerService with KeepaliveMixin {
   /// Broadcast a message to all connected peers
   void broadcast(SyncMessage message) {
     final payload = message.toJson();
-    appLogger.d('WatchTogether: Broadcasting ${message.type} to ${_connectedPeers.length} peers');
     _sendRaw({'type': 'broadcast', 'payload': payload});
   }
 
   /// Send a message to a specific peer
   void sendTo(String peerId, SyncMessage message) {
     final payload = message.toJson();
-    appLogger.d('WatchTogether: Sending ${message.type} to $peerId');
     _sendRaw({'type': 'sendTo', 'to': peerId, 'payload': payload});
   }
 

@@ -97,9 +97,6 @@ class _TranslationsAuthSv implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Logga in med Plex';
 	@override String get showQRCode => 'Visa QR-kod';
 	@override String get authenticate => 'Autentisera';
-	@override String get debugEnterToken => 'Debug: Ange Plex-token';
-	@override String get plexTokenLabel => 'Plex-autentiseringstoken';
-	@override String get plexTokenHint => 'Ange din Plex.tv-token';
 	@override String get authenticationTimeout => 'Autentisering tog för lång tid. Försök igen.';
 	@override String get scanQRToSignIn => 'Skanna QR-koden för att logga in';
 	@override String get waitingForAuth => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.';
@@ -300,6 +297,11 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Hoppa automatiskt över credits och spela nästa avsnitt';
 	@override String get autoSkipDelay => 'Fördröjning Auto Hoppa Över';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vänta ${seconds} sekunder innan automatisk överhoppning';
+	@override String get introPattern => 'Intromarkörsmönster';
+	@override String get introPatternDescription => 'Reguljärt uttryck för att matcha intromarkörer i kapiteltitlar';
+	@override String get creditsPattern => 'Eftertextmarkörsmönster';
+	@override String get creditsPatternDescription => 'Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar';
+	@override String get invalidRegex => 'Ogiltigt reguljärt uttryck';
 	@override String get downloads => 'Nedladdningar';
 	@override String get downloadLocationDescription => 'Välj var nedladdat innehåll ska lagras';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -323,8 +325,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning';
 	@override String get matchContentFrameRate => 'Matcha innehållets bildfrekvens';
 	@override String get matchContentFrameRateDescription => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => 'Tunneluppspelning';
+	@override String get tunneledPlaybackDescription => 'Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll';
 	@override String get requireProfileSelectionOnOpen => 'Fråga efter profil vid appstart';
 	@override String get requireProfileSelectionOnOpenDescription => 'Visa profilval varje gång appen öppnas';
 	@override String get confirmExitOnBack => 'Bekräfta innan avslut';
@@ -515,8 +517,8 @@ class _TranslationsVideoControlsSv implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => 'Kö';
+	@override String get noQueueItems => 'Inga objekt i kön';
 }
 
 // Path: userStatus
@@ -569,9 +571,9 @@ class _TranslationsMessagesSv implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Det gick inte att skapa uppspelningskö – inga objekt';
 	@override String failedPlayback({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Byter till kompatibel spelare...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => 'Loggar uppladdade';
+	@override String get logsUploadFailed => 'Uppladdning av loggar misslyckades';
+	@override String get logId => 'Logg-ID';
 }
 
 // Path: subtitlingStyling
@@ -766,7 +768,7 @@ class _TranslationsLogsSv implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Rensa loggar';
 	@override String get copyLogs => 'Kopiera loggar';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => 'Ladda upp loggar';
 	@override String get error => 'Fel:';
 	@override String get stackTrace => 'Stack trace:';
 }
@@ -993,12 +995,12 @@ class _TranslationsShadersSv implements TranslationsShadersEn {
 	@override String get qualityFast => 'Snabb';
 	@override String get qualityHQ => 'Hög kvalitet';
 	@override String get mode => 'Läge';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => 'Importera shader';
+	@override String get customShaderDescription => 'Anpassad GLSL-shader';
+	@override String get shaderImported => 'Shader importerad';
+	@override String get shaderImportFailed => 'Kunde inte importera shader';
+	@override String get deleteShader => 'Ta bort shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Ta bort "${name}"?';
 }
 
 // Path: companionRemote
@@ -1008,7 +1010,7 @@ class _TranslationsCompanionRemoteSv implements TranslationsCompanionRemoteEn {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => 'Fjärrkontroll';
 	@override String get connectToDevice => 'Anslut till enhet';
 	@override String get hostRemoteSession => 'Starta fjärrsession';
 	@override String get controlThisDevice => 'Styr den här enheten med din telefon';
@@ -1311,9 +1313,6 @@ extension on TranslationsSv {
 			'auth.signInWithPlex' => 'Logga in med Plex',
 			'auth.showQRCode' => 'Visa QR-kod',
 			'auth.authenticate' => 'Autentisera',
-			'auth.debugEnterToken' => 'Debug: Ange Plex-token',
-			'auth.plexTokenLabel' => 'Plex-autentiseringstoken',
-			'auth.plexTokenHint' => 'Ange din Plex.tv-token',
 			'auth.authenticationTimeout' => 'Autentisering tog för lång tid. Försök igen.',
 			'auth.scanQRToSignIn' => 'Skanna QR-koden för att logga in',
 			'auth.waitingForAuth' => 'Väntar på autentisering...\nVänligen slutför inloggning i din webbläsare.',
@@ -1478,6 +1477,11 @@ extension on TranslationsSv {
 			'settings.autoSkipCreditsDescription' => 'Hoppa automatiskt över credits och spela nästa avsnitt',
 			'settings.autoSkipDelay' => 'Fördröjning Auto Hoppa Över',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vänta ${seconds} sekunder innan automatisk överhoppning',
+			'settings.introPattern' => 'Intromarkörsmönster',
+			'settings.introPatternDescription' => 'Reguljärt uttryck för att matcha intromarkörer i kapiteltitlar',
+			'settings.creditsPattern' => 'Eftertextmarkörsmönster',
+			'settings.creditsPatternDescription' => 'Reguljärt uttryck för att matcha eftertextmarkörer i kapiteltitlar',
+			'settings.invalidRegex' => 'Ogiltigt reguljärt uttryck',
 			'settings.downloads' => 'Nedladdningar',
 			'settings.downloadLocationDescription' => 'Välj var nedladdat innehåll ska lagras',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -1501,8 +1505,8 @@ extension on TranslationsSv {
 			'settings.autoPipDescription' => 'Aktivera bild-i-bild automatiskt när appen lämnas under uppspelning',
 			'settings.matchContentFrameRate' => 'Matcha innehållets bildfrekvens',
 			'settings.matchContentFrameRateDescription' => 'Justera skärmens uppdateringsfrekvens för att matcha videoinnehållet, minskar hackighet och sparar batteri',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => 'Tunneluppspelning',
+			'settings.tunneledPlaybackDescription' => 'Använd hårdvaruaccelererad videotunnling. Inaktivera om du ser en svart skärm med ljud vid HDR-innehåll',
 			'settings.requireProfileSelectionOnOpen' => 'Fråga efter profil vid appstart',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Visa profilval varje gång appen öppnas',
 			'settings.confirmExitOnBack' => 'Bekräfta innan avslut',
@@ -1645,8 +1649,8 @@ extension on TranslationsSv {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ett fel uppstod: ${error}',
 			'videoControls.chapters' => 'Kapitel',
 			'videoControls.noChaptersAvailable' => 'Inga kapitel tillgängliga',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => 'Kö',
+			'videoControls.noQueueItems' => 'Inga objekt i kön',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Begränsad',
 			'userStatus.protected' => 'Skyddad',
@@ -1681,9 +1685,9 @@ extension on TranslationsSv {
 			'messages.failedToCreatePlayQueueNoItems' => 'Det gick inte att skapa uppspelningskö – inga objekt',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Kunde inte ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Byter till kompatibel spelare...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => 'Loggar uppladdade',
+			'messages.logsUploadFailed' => 'Uppladdning av loggar misslyckades',
+			'messages.logId' => 'Logg-ID',
 			'subtitlingStyling.stylingOptions' => 'Stilalternativ',
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
@@ -1796,7 +1800,7 @@ extension on TranslationsSv {
 			'hubDetail.noItemsFound' => 'Inga objekt hittades',
 			'logs.clearLogs' => 'Rensa loggar',
 			'logs.copyLogs' => 'Kopiera loggar',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => 'Ladda upp loggar',
 			'logs.error' => 'Fel:',
 			'logs.stackTrace' => 'Stack trace:',
 			'licenses.relatedPackages' => 'Relaterade paket',
@@ -1817,10 +1821,10 @@ extension on TranslationsSv {
 			'liveTv.noPrograms' => 'Ingen programdata tillgänglig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kanal ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NY',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Ladda om programguide',
 			'liveTv.allChannels' => 'Alla kanaler',
 			'liveTv.now' => 'Nu',
@@ -1953,13 +1957,13 @@ extension on TranslationsSv {
 			'shaders.qualityFast' => 'Snabb',
 			'shaders.qualityHQ' => 'Hög kvalitet',
 			'shaders.mode' => 'Läge',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => 'Importera shader',
+			'shaders.customShaderDescription' => 'Anpassad GLSL-shader',
+			'shaders.shaderImported' => 'Shader importerad',
+			'shaders.shaderImportFailed' => 'Kunde inte importera shader',
+			'shaders.deleteShader' => 'Ta bort shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Ta bort "${name}"?',
+			'companionRemote.title' => 'Fjärrkontroll',
 			'companionRemote.connectToDevice' => 'Anslut till enhet',
 			'companionRemote.hostRemoteSession' => 'Starta fjärrsession',
 			'companionRemote.controlThisDevice' => 'Styr den här enheten med din telefon',

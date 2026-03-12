@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -12,8 +14,8 @@ import '../../../models/plex_metadata.dart';
 import '../../../providers/playback_state_provider.dart';
 import '../../../services/download_storage_service.dart';
 import '../../../services/plex_client.dart';
-import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
+import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../app_icon.dart';
 import '../../plex_optimized_image.dart';
@@ -26,6 +28,7 @@ class ContentStrip extends StatefulWidget {
   final String? serverId;
   final bool showQueueTab;
   final Function(PlexMetadata)? onQueueItemSelected;
+  final Function(Duration position)? onSeekCompleted;
 
   /// Whether to use dpad/focus-based navigation (TV mode).
   /// When true, no tab bar is shown — pages are navigated via UP/DOWN.
@@ -45,6 +48,7 @@ class ContentStrip extends StatefulWidget {
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
+    this.onSeekCompleted,
     this.useFocusNavigation = false,
     this.onNavigateUp,
     this.onFocusActivity,
@@ -120,6 +124,14 @@ class ContentStripState extends State<ContentStrip> {
     return null;
   }
 
+  Future<void> _handleChapterTap(Duration position) async {
+    final clamped = clampSeekPosition(widget.player, position);
+    await widget.player.seek(clamped);
+    if (mounted) {
+      widget.onSeekCompleted?.call(clamped);
+    }
+  }
+
   int? _getCurrentQueueIndex() {
     try {
       final playbackState = context.read<PlaybackStateProvider>();
@@ -155,13 +167,7 @@ class ContentStripState extends State<ContentStrip> {
     });
   }
 
-  KeyEventResult _handleFocusItemKeyEvent(
-    FocusNode node,
-    KeyEvent event,
-    int index,
-    int totalItems,
-    _StripTab page,
-  ) {
+  KeyEventResult _handleFocusItemKeyEvent(FocusNode node, KeyEvent event, int index, int totalItems, _StripTab page) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
@@ -306,7 +312,7 @@ class ContentStripState extends State<ContentStrip> {
             ),
           ),
           const SizedBox(height: 4),
-          Container(height: 2, width: 40, color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent),
+          Container(height: 2, width: 40, color: isActive ? Colors.white : Colors.transparent),
         ],
       ),
     );
@@ -363,7 +369,7 @@ class ContentStripState extends State<ContentStrip> {
                 ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
                 : null;
 
-            void onTap() => widget.player.seek(chapter.startTime);
+            void onTap() => unawaited(_handleChapterTap(chapter.startTime));
 
             final item = _buildStripItem(
               context: context,
@@ -504,7 +510,7 @@ class ContentStripState extends State<ContentStrip> {
       return '${item.grandparentTitle} \u00b7 S${item.parentIndex}E${item.index}';
     }
     if (item.grandparentTitle != null) return item.grandparentTitle!;
-    if (item.year != null) return '${item.year}';
+    if (item.year != null) return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
     return item.type;
   }
 
@@ -555,7 +561,7 @@ class ContentStripState extends State<ContentStrip> {
                         decoration: BoxDecoration(
                           borderRadius: const BorderRadius.all(Radius.circular(6)),
                           border: Border.fromBorderSide(
-                            BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                            BorderSide(color: Colors.white, width: 2),
                           ),
                         ),
                       ),
@@ -568,7 +574,7 @@ class ContentStripState extends State<ContentStrip> {
             Text(
               title,
               style: TextStyle(
-                color: isCurrent ? Theme.of(context).colorScheme.primary : Colors.white,
+                color: Colors.white,
                 fontSize: titleFontSize,
                 fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -579,9 +585,7 @@ class ContentStripState extends State<ContentStrip> {
             Text(
               subtitle,
               style: TextStyle(
-                color: isCurrent
-                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.7)
-                    : tokens(context).textMuted,
+                color: isCurrent ? Colors.white70 : Colors.white60,
                 fontSize: subtitleFontSize,
                 fontWeight: isCurrent ? FontWeight.w500 : FontWeight.normal,
               ),

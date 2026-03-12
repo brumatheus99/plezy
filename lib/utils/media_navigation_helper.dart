@@ -3,7 +3,6 @@ import '../models/plex_metadata.dart';
 import '../models/plex_playlist.dart';
 import '../screens/collection_detail_screen.dart';
 import '../screens/media_detail_screen.dart';
-import '../screens/season_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
 import 'video_player_navigation.dart';
 
@@ -96,14 +95,34 @@ Future<MediaNavigationResult> navigateToMediaItem(
       continue defaultCase;
 
     case PlexMediaType.season:
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SeasonDetailScreen(season: metadata, isOffline: isOffline),
-        ),
-      );
-      onRefresh?.call(metadata.ratingKey);
-      return MediaNavigationResult.navigated;
+      // Navigate to the parent show with the season tab pre-selected
+      if (metadata.parentRatingKey != null) {
+        final showStub = PlexMetadata(
+          ratingKey: metadata.parentRatingKey!,
+          key: '/library/metadata/${metadata.parentRatingKey}',
+          type: 'show',
+          title: metadata.grandparentTitle ?? metadata.parentTitle ?? metadata.displayTitle,
+          thumb: metadata.grandparentThumb ?? metadata.parentThumb,
+          art: metadata.grandparentArt,
+          serverId: metadata.serverId,
+          serverName: metadata.serverName,
+        );
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MediaDetailScreen(
+              metadata: showStub,
+              isOffline: isOffline,
+              initialSeasonIndex: metadata.index,
+            ),
+          ),
+        );
+        if (result == true) {
+          onRefresh?.call(metadata.ratingKey);
+        }
+        return MediaNavigationResult.navigated;
+      }
+      continue defaultCase;
 
     defaultCase:
     default:

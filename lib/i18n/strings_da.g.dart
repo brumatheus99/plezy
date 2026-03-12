@@ -97,9 +97,6 @@ class _TranslationsAuthDa implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Log ind med Plex';
 	@override String get showQRCode => 'Vis QR-kode';
 	@override String get authenticate => 'Godkend';
-	@override String get debugEnterToken => 'Debug: Indtast Plex-token';
-	@override String get plexTokenLabel => 'Plex-godkendelsestoken';
-	@override String get plexTokenHint => 'Indtast dit Plex.tv-token';
 	@override String get authenticationTimeout => 'Godkendelse fik timeout. Prøv igen.';
 	@override String get scanQRToSignIn => 'Scan denne QR-kode for at logge ind';
 	@override String get waitingForAuth => 'Venter på godkendelse...\nFærdiggør login i din browser.';
@@ -300,6 +297,11 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Spring automatisk rulletekster over og afspil næste episode';
 	@override String get autoSkipDelay => 'Auto-spring forsinkelse';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk spring';
+	@override String get introPattern => 'Intromarkørmønster';
+	@override String get introPatternDescription => 'Regulært udtryk til at genkende intromarkører i kapiteltitler';
+	@override String get creditsPattern => 'Rulletekstmarkørmønster';
+	@override String get creditsPatternDescription => 'Regulært udtryk til at genkende rulletekstmarkører i kapiteltitler';
+	@override String get invalidRegex => 'Ugyldigt regulært udtryk';
 	@override String get downloads => 'Downloads';
 	@override String get downloadLocationDescription => 'Vælg hvor downloadet indhold skal gemmes';
 	@override String get downloadLocationDefault => 'Standard (App-lagring)';
@@ -1311,9 +1313,6 @@ extension on TranslationsDa {
 			'auth.signInWithPlex' => 'Log ind med Plex',
 			'auth.showQRCode' => 'Vis QR-kode',
 			'auth.authenticate' => 'Godkend',
-			'auth.debugEnterToken' => 'Debug: Indtast Plex-token',
-			'auth.plexTokenLabel' => 'Plex-godkendelsestoken',
-			'auth.plexTokenHint' => 'Indtast dit Plex.tv-token',
 			'auth.authenticationTimeout' => 'Godkendelse fik timeout. Prøv igen.',
 			'auth.scanQRToSignIn' => 'Scan denne QR-kode for at logge ind',
 			'auth.waitingForAuth' => 'Venter på godkendelse...\nFærdiggør login i din browser.',
@@ -1478,6 +1477,11 @@ extension on TranslationsDa {
 			'settings.autoSkipCreditsDescription' => 'Spring automatisk rulletekster over og afspil næste episode',
 			'settings.autoSkipDelay' => 'Auto-spring forsinkelse',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk spring',
+			'settings.introPattern' => 'Intromarkørmønster',
+			'settings.introPatternDescription' => 'Regulært udtryk til at genkende intromarkører i kapiteltitler',
+			'settings.creditsPattern' => 'Rulletekstmarkørmønster',
+			'settings.creditsPatternDescription' => 'Regulært udtryk til at genkende rulletekstmarkører i kapiteltitler',
+			'settings.invalidRegex' => 'Ugyldigt regulært udtryk',
 			'settings.downloads' => 'Downloads',
 			'settings.downloadLocationDescription' => 'Vælg hvor downloadet indhold skal gemmes',
 			'settings.downloadLocationDefault' => 'Standard (App-lagring)',
@@ -1817,10 +1821,10 @@ extension on TranslationsDa {
 			'liveTv.noPrograms' => 'Ingen programdata tilgængelig',
 			'liveTv.channelNumber' => ({required Object number}) => 'Kn. ${number}',
 			'liveTv.live' => 'LIVE',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NY',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NY',
 			'liveTv.reloadGuide' => 'Genindlæs guide',
 			'liveTv.allChannels' => 'Alle kanaler',
 			'liveTv.now' => 'Nu',

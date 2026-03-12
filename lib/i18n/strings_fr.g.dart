@@ -97,9 +97,6 @@ class _TranslationsAuthFr implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'S\'inscrire avec Plex';
 	@override String get showQRCode => 'Afficher le QR Code';
 	@override String get authenticate => 'S\'authentifier';
-	@override String get debugEnterToken => 'Debug: Entrez votre token Plex';
-	@override String get plexTokenLabel => 'Token d\'authentification Plex';
-	@override String get plexTokenHint => 'Entrez votre token Plex.tv';
 	@override String get authenticationTimeout => 'Délai d\'authentification expiré. Veuillez réessayer.';
 	@override String get scanQRToSignIn => 'Scannez ce QR code pour vous connecter';
 	@override String get waitingForAuth => 'En attente d\'authentification...\nVeuillez vous connecter dans votre navigateur.';
@@ -217,8 +214,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String durationHint({required Object min, required Object max}) => 'Entrez la durée (${min}-${max})';
 	@override String get systemTheme => 'Système';
 	@override String get systemThemeDescription => 'Suivre les paramètres système';
-	@override String get lightTheme => 'Light';
-	@override String get darkTheme => 'Dark';
+	@override String get lightTheme => 'Clair';
+	@override String get darkTheme => 'Sombre';
 	@override String get oledTheme => 'OLED';
 	@override String get oledThemeDescription => 'Noir pur pour les écrans OLED';
 	@override String get libraryDensity => 'Densité des bibliothèques';
@@ -257,8 +254,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String bufferSizeWarning({required Object heap, required Object size}) => 'Votre appareil dispose de ${heap}MB de mémoire. Un tampon de ${size}MB peut causer des problèmes de lecture.';
 	@override String get subtitleStyling => 'Stylisation des sous-titres';
 	@override String get subtitleStylingDescription => 'Personnaliser l\'apparence des sous-titres';
-	@override String get smallSkipDuration => 'Small Skip Duration';
-	@override String get largeSkipDuration => 'Large Skip Duration';
+	@override String get smallSkipDuration => 'Durée du petit saut';
+	@override String get largeSkipDuration => 'Durée du grand saut';
 	@override String secondsUnit({required Object seconds}) => '${seconds} secondes';
 	@override String get defaultSleepTimer => 'Minuterie de mise en veille par défaut';
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutes';
@@ -300,6 +297,11 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Passer les crédits et passer à l\'épisode suivant automatiquement';
 	@override String get autoSkipDelay => 'Délai avant skip automatique';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Attendre ${seconds} secondes avant l\'auto-skip';
+	@override String get introPattern => 'Modèle de marqueur d\'intro';
+	@override String get introPatternDescription => 'Expression régulière pour reconnaître les marqueurs d\'intro dans les titres de chapitres';
+	@override String get creditsPattern => 'Modèle de marqueur de générique';
+	@override String get creditsPatternDescription => 'Expression régulière pour reconnaître les marqueurs de générique dans les titres de chapitres';
+	@override String get invalidRegex => 'Expression régulière invalide';
 	@override String get downloads => 'Téléchargement';
 	@override String get downloadLocationDescription => 'Choisissez où stocker le contenu téléchargé';
 	@override String get downloadLocationDefault => 'Par défaut (stockage de l\'application)';
@@ -323,8 +325,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Activer automatiquement l\'image dans l\'image en quittant l\'application pendant la lecture';
 	@override String get matchContentFrameRate => 'Fréquence d\'images du contenu correspondant';
 	@override String get matchContentFrameRateDescription => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => 'Lecture tunnelée';
+	@override String get tunneledPlaybackDescription => 'Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR';
 	@override String get requireProfileSelectionOnOpen => 'Demander le profil à l\'ouverture';
 	@override String get requireProfileSelectionOnOpenDescription => 'Afficher la sélection de profil à chaque ouverture de l\'application';
 	@override String get confirmExitOnBack => 'Confirmer avant de quitter';
@@ -393,7 +395,7 @@ class _TranslationsFileInfoFr implements TranslationsFileInfoEn {
 	@override String get colorRange => 'Gamme de couleurs';
 	@override String get colorPrimaries => 'Couleurs primaires';
 	@override String get chromaSubsampling => 'Sous-échantillonnage chromatique';
-	@override String get channels => 'Channels';
+	@override String get channels => 'Canaux';
 	@override String get path => 'Chemin';
 	@override String get size => 'Taille';
 	@override String get container => 'Conteneur';
@@ -505,7 +507,7 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override String get ambientLightingOff => 'Désactiver l\'éclairage ambiant';
 	@override String get fullscreenButton => 'Passer en mode plein écran';
 	@override String get exitFullscreenButton => 'Quitter le mode plein écran';
-	@override String get alwaysOnTopButton => 'Always on top';
+	@override String get alwaysOnTopButton => 'Toujours au premier plan';
 	@override String get rotationLockButton => 'Verrouillage de rotation';
 	@override String get timelineSlider => 'Timeline vidéo';
 	@override String get volumeSlider => 'Niveau sonore';
@@ -515,8 +517,8 @@ class _TranslationsVideoControlsFr implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
 	@override String get chapters => 'Chapitres';
 	@override String get noChaptersAvailable => 'Aucun chapitre disponible';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => 'File d\'attente';
+	@override String get noQueueItems => 'Aucun élément dans la file d\'attente';
 }
 
 // Path: userStatus
@@ -569,9 +571,9 @@ class _TranslationsMessagesFr implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Échec de la création de la file d\'attente de lecture - aucun élément';
 	@override String failedPlayback({required Object action, required Object error}) => 'Echec de ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Passage au lecteur compatible...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => 'Logs envoyés';
+	@override String get logsUploadFailed => 'Échec de l\'envoi des logs';
+	@override String get logId => 'ID du log';
 }
 
 // Path: subtitlingStyling
@@ -766,7 +768,7 @@ class _TranslationsLogsFr implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Effacer les logs';
 	@override String get copyLogs => 'Copier les logs';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => 'Envoyer les logs';
 	@override String get error => 'Erreur:';
 	@override String get stackTrace => 'Liste des appels:';
 }
@@ -885,7 +887,7 @@ class _TranslationsPlaylistsFr implements TranslationsPlaylistsEn {
 	@override String get deleted => 'Playlist supprimée';
 	@override String get itemAdded => 'Ajouté à la playlist';
 	@override String get itemRemoved => 'Retiré de la playlist';
-	@override String get selectPlaylist => 'Select Playlist';
+	@override String get selectPlaylist => 'Sélectionner une playlist';
 	@override String get errorCreating => 'Échec de la création de playlist';
 	@override String get errorDeleting => 'Échec de suppression de playlist';
 	@override String get errorLoading => 'Échec de chargement de playlists';
@@ -993,12 +995,12 @@ class _TranslationsShadersFr implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rapide';
 	@override String get qualityHQ => 'Haute qualité';
 	@override String get mode => 'Mode';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => 'Importer un shader';
+	@override String get customShaderDescription => 'Shader GLSL personnalisé';
+	@override String get shaderImported => 'Shader importé';
+	@override String get shaderImportFailed => 'Échec de l\'importation du shader';
+	@override String get deleteShader => 'Supprimer le shader';
+	@override String deleteShaderConfirm({required Object name}) => 'Supprimer "${name}" ?';
 }
 
 // Path: companionRemote
@@ -1008,7 +1010,7 @@ class _TranslationsCompanionRemoteFr implements TranslationsCompanionRemoteEn {
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => 'Télécommande compagnon';
 	@override String get connectToDevice => 'Se connecter à un appareil';
 	@override String get hostRemoteSession => 'Héberger une session distante';
 	@override String get controlThisDevice => 'Contrôlez cet appareil avec votre téléphone';
@@ -1311,9 +1313,6 @@ extension on TranslationsFr {
 			'auth.signInWithPlex' => 'S\'inscrire avec Plex',
 			'auth.showQRCode' => 'Afficher le QR Code',
 			'auth.authenticate' => 'S\'authentifier',
-			'auth.debugEnterToken' => 'Debug: Entrez votre token Plex',
-			'auth.plexTokenLabel' => 'Token d\'authentification Plex',
-			'auth.plexTokenHint' => 'Entrez votre token Plex.tv',
 			'auth.authenticationTimeout' => 'Délai d\'authentification expiré. Veuillez réessayer.',
 			'auth.scanQRToSignIn' => 'Scannez ce QR code pour vous connecter',
 			'auth.waitingForAuth' => 'En attente d\'authentification...\nVeuillez vous connecter dans votre navigateur.',
@@ -1395,8 +1394,8 @@ extension on TranslationsFr {
 			'settings.durationHint' => ({required Object min, required Object max}) => 'Entrez la durée (${min}-${max})',
 			'settings.systemTheme' => 'Système',
 			'settings.systemThemeDescription' => 'Suivre les paramètres système',
-			'settings.lightTheme' => 'Light',
-			'settings.darkTheme' => 'Dark',
+			'settings.lightTheme' => 'Clair',
+			'settings.darkTheme' => 'Sombre',
 			'settings.oledTheme' => 'OLED',
 			'settings.oledThemeDescription' => 'Noir pur pour les écrans OLED',
 			'settings.libraryDensity' => 'Densité des bibliothèques',
@@ -1435,8 +1434,8 @@ extension on TranslationsFr {
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => 'Votre appareil dispose de ${heap}MB de mémoire. Un tampon de ${size}MB peut causer des problèmes de lecture.',
 			'settings.subtitleStyling' => 'Stylisation des sous-titres',
 			'settings.subtitleStylingDescription' => 'Personnaliser l\'apparence des sous-titres',
-			'settings.smallSkipDuration' => 'Small Skip Duration',
-			'settings.largeSkipDuration' => 'Large Skip Duration',
+			'settings.smallSkipDuration' => 'Durée du petit saut',
+			'settings.largeSkipDuration' => 'Durée du grand saut',
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} secondes',
 			'settings.defaultSleepTimer' => 'Minuterie de mise en veille par défaut',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
@@ -1478,6 +1477,11 @@ extension on TranslationsFr {
 			'settings.autoSkipCreditsDescription' => 'Passer les crédits et passer à l\'épisode suivant automatiquement',
 			'settings.autoSkipDelay' => 'Délai avant skip automatique',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Attendre ${seconds} secondes avant l\'auto-skip',
+			'settings.introPattern' => 'Modèle de marqueur d\'intro',
+			'settings.introPatternDescription' => 'Expression régulière pour reconnaître les marqueurs d\'intro dans les titres de chapitres',
+			'settings.creditsPattern' => 'Modèle de marqueur de générique',
+			'settings.creditsPatternDescription' => 'Expression régulière pour reconnaître les marqueurs de générique dans les titres de chapitres',
+			'settings.invalidRegex' => 'Expression régulière invalide',
 			'settings.downloads' => 'Téléchargement',
 			'settings.downloadLocationDescription' => 'Choisissez où stocker le contenu téléchargé',
 			'settings.downloadLocationDefault' => 'Par défaut (stockage de l\'application)',
@@ -1501,8 +1505,8 @@ extension on TranslationsFr {
 			'settings.autoPipDescription' => 'Activer automatiquement l\'image dans l\'image en quittant l\'application pendant la lecture',
 			'settings.matchContentFrameRate' => 'Fréquence d\'images du contenu correspondant',
 			'settings.matchContentFrameRateDescription' => 'Ajustez la fréquence de rafraîchissement de l\'écran en fonction du contenu vidéo, ce qui réduit les saccades et économise la batterie',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => 'Lecture tunnelée',
+			'settings.tunneledPlaybackDescription' => 'Utiliser le tunnelage vidéo accéléré par matériel. Désactiver si vous voyez un écran noir avec du son sur du contenu HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Demander le profil à l\'ouverture',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Afficher la sélection de profil à chaque ouverture de l\'application',
 			'settings.confirmExitOnBack' => 'Confirmer avant de quitter',
@@ -1553,7 +1557,7 @@ extension on TranslationsFr {
 			'fileInfo.colorRange' => 'Gamme de couleurs',
 			'fileInfo.colorPrimaries' => 'Couleurs primaires',
 			'fileInfo.chromaSubsampling' => 'Sous-échantillonnage chromatique',
-			'fileInfo.channels' => 'Channels',
+			'fileInfo.channels' => 'Canaux',
 			'fileInfo.path' => 'Chemin',
 			'fileInfo.size' => 'Taille',
 			'fileInfo.container' => 'Conteneur',
@@ -1629,7 +1633,7 @@ extension on TranslationsFr {
 			'videoControls.ambientLightingOff' => 'Désactiver l\'éclairage ambiant',
 			'videoControls.fullscreenButton' => 'Passer en mode plein écran',
 			'videoControls.exitFullscreenButton' => 'Quitter le mode plein écran',
-			'videoControls.alwaysOnTopButton' => 'Always on top',
+			'videoControls.alwaysOnTopButton' => 'Toujours au premier plan',
 			'videoControls.rotationLockButton' => 'Verrouillage de rotation',
 			'videoControls.timelineSlider' => 'Timeline vidéo',
 			'videoControls.volumeSlider' => 'Niveau sonore',
@@ -1645,8 +1649,8 @@ extension on TranslationsFr {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Une erreur s\'est produite : ${error}',
 			'videoControls.chapters' => 'Chapitres',
 			'videoControls.noChaptersAvailable' => 'Aucun chapitre disponible',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => 'File d\'attente',
+			'videoControls.noQueueItems' => 'Aucun élément dans la file d\'attente',
 			'userStatus.admin' => 'Admin',
 			'userStatus.restricted' => 'Restreint',
 			'userStatus.protected' => 'Protégé',
@@ -1681,9 +1685,9 @@ extension on TranslationsFr {
 			'messages.failedToCreatePlayQueueNoItems' => 'Échec de la création de la file d\'attente de lecture - aucun élément',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Echec de ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Passage au lecteur compatible...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => 'Logs envoyés',
+			'messages.logsUploadFailed' => 'Échec de l\'envoi des logs',
+			'messages.logId' => 'ID du log',
 			'subtitlingStyling.stylingOptions' => 'Options de style',
 			'subtitlingStyling.fontSize' => 'Taille de la police',
 			'subtitlingStyling.textColor' => 'Couleur du texte',
@@ -1796,7 +1800,7 @@ extension on TranslationsFr {
 			'hubDetail.noItemsFound' => 'Aucun élément trouvé',
 			'logs.clearLogs' => 'Effacer les logs',
 			'logs.copyLogs' => 'Copier les logs',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => 'Envoyer les logs',
 			'logs.error' => 'Erreur:',
 			'logs.stackTrace' => 'Liste des appels:',
 			'licenses.relatedPackages' => 'Package associés',
@@ -1817,10 +1821,10 @@ extension on TranslationsFr {
 			'liveTv.noPrograms' => 'Aucune donnée de programme disponible',
 			'liveTv.channelNumber' => ({required Object number}) => 'Ch. ${number}',
 			'liveTv.live' => 'EN DIRECT',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NOUVEAU',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NOUVEAU',
 			'liveTv.reloadGuide' => 'Recharger le guide',
 			'liveTv.allChannels' => 'Toutes les chaînes',
 			'liveTv.now' => 'Maintenant',
@@ -1872,7 +1876,7 @@ extension on TranslationsFr {
 			'playlists.deleted' => 'Playlist supprimée',
 			'playlists.itemAdded' => 'Ajouté à la playlist',
 			'playlists.itemRemoved' => 'Retiré de la playlist',
-			'playlists.selectPlaylist' => 'Select Playlist',
+			'playlists.selectPlaylist' => 'Sélectionner une playlist',
 			'playlists.errorCreating' => 'Échec de la création de playlist',
 			'playlists.errorDeleting' => 'Échec de suppression de playlist',
 			'playlists.errorLoading' => 'Échec de chargement de playlists',
@@ -1953,13 +1957,13 @@ extension on TranslationsFr {
 			'shaders.qualityFast' => 'Rapide',
 			'shaders.qualityHQ' => 'Haute qualité',
 			'shaders.mode' => 'Mode',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => 'Importer un shader',
+			'shaders.customShaderDescription' => 'Shader GLSL personnalisé',
+			'shaders.shaderImported' => 'Shader importé',
+			'shaders.shaderImportFailed' => 'Échec de l\'importation du shader',
+			'shaders.deleteShader' => 'Supprimer le shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Supprimer "${name}" ?',
+			'companionRemote.title' => 'Télécommande compagnon',
 			'companionRemote.connectToDevice' => 'Se connecter à un appareil',
 			'companionRemote.hostRemoteSession' => 'Héberger une session distante',
 			'companionRemote.controlThisDevice' => 'Contrôlez cet appareil avec votre téléphone',

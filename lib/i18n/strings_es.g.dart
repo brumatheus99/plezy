@@ -97,9 +97,6 @@ class _TranslationsAuthEs implements TranslationsAuthEn {
 	@override String get signInWithPlex => 'Inicia sesión con Plex';
 	@override String get showQRCode => 'Mostrar código QR';
 	@override String get authenticate => 'Autenticar';
-	@override String get debugEnterToken => 'Debug: Ingresar Token de Plex';
-	@override String get plexTokenLabel => 'Token de Autenticación de Plex';
-	@override String get plexTokenHint => 'Ingresa tu token de Plex.tv';
 	@override String get authenticationTimeout => 'Tiempo de autenticación agotado. Por favor, intenta de nuevo.';
 	@override String get scanQRToSignIn => 'Escanea este código QR para iniciar sesión';
 	@override String get waitingForAuth => 'Esperando autenticación...\nPor favor completa el inicio de sesión en tu navegador.';
@@ -300,6 +297,11 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get autoSkipCreditsDescription => 'Saltar automáticamente los créditos y reproducir el siguiente episodio';
 	@override String get autoSkipDelay => 'Retraso de Salto automático';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Esperar ${seconds} segundos antes de saltar automáticamente';
+	@override String get introPattern => 'Patrón de marcador de intro';
+	@override String get introPatternDescription => 'Expresión regular para reconocer marcadores de intro en los títulos de capítulos';
+	@override String get creditsPattern => 'Patrón de marcador de créditos';
+	@override String get creditsPatternDescription => 'Expresión regular para reconocer marcadores de créditos en los títulos de capítulos';
+	@override String get invalidRegex => 'Expresión regular no válida';
 	@override String get downloads => 'Descargas';
 	@override String get downloadLocationDescription => 'Elegir dónde almacenar el contenido descargado';
 	@override String get downloadLocationDefault => 'Predeterminado (Almacenamiento de la App)';
@@ -323,8 +325,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get autoPipDescription => 'Activar automáticamente imagen en imagen al salir de la app durante la reproducción';
 	@override String get matchContentFrameRate => 'Ajustar frecuencia de actualización';
 	@override String get matchContentFrameRateDescription => 'Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería';
-	@override String get tunneledPlayback => 'Tunneled Playback';
-	@override String get tunneledPlaybackDescription => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content';
+	@override String get tunneledPlayback => 'Reproducción tunelizada';
+	@override String get tunneledPlaybackDescription => 'Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil al abrir la app';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar selección de perfil cada vez que se abre la aplicación';
 	@override String get confirmExitOnBack => 'Confirmar antes de salir';
@@ -515,8 +517,8 @@ class _TranslationsVideoControlsEs implements TranslationsVideoControlsEn {
 	@override late final _TranslationsVideoControlsPipErrorsEs pipErrors = _TranslationsVideoControlsPipErrorsEs._(_root);
 	@override String get chapters => 'Capítulos';
 	@override String get noChaptersAvailable => 'No hay capítulos disponibles';
-	@override String get queue => 'Queue';
-	@override String get noQueueItems => 'No items in queue';
+	@override String get queue => 'Cola';
+	@override String get noQueueItems => 'No hay elementos en la cola';
 }
 
 // Path: userStatus
@@ -569,9 +571,9 @@ class _TranslationsMessagesEs implements TranslationsMessagesEn {
 	@override String get failedToCreatePlayQueueNoItems => 'Error al crear la cola de reproducción - no hay elementos';
 	@override String failedPlayback({required Object action, required Object error}) => 'Error al ${action}: ${error}';
 	@override String get switchingToCompatiblePlayer => 'Cambiando a reproductor compatible...';
-	@override String get logsUploaded => 'Logs uploaded';
-	@override String get logsUploadFailed => 'Failed to upload logs';
-	@override String get logId => 'Log ID';
+	@override String get logsUploaded => 'Registros subidos';
+	@override String get logsUploadFailed => 'Error al subir registros';
+	@override String get logId => 'ID de registro';
 }
 
 // Path: subtitlingStyling
@@ -588,7 +590,7 @@ class _TranslationsSubtitlingStylingEs implements TranslationsSubtitlingStylingE
 	@override String get borderColor => 'Color de Borde';
 	@override String get backgroundOpacity => 'Opacidad de Fondo';
 	@override String get backgroundColor => 'Color de Fondo';
-	@override String get position => 'Position';
+	@override String get position => 'Posición';
 }
 
 // Path: mpvConfig
@@ -766,7 +768,7 @@ class _TranslationsLogsEs implements TranslationsLogsEn {
 	// Translations
 	@override String get clearLogs => 'Borrar Logs';
 	@override String get copyLogs => 'Copiar Logs';
-	@override String get uploadLogs => 'Upload Logs';
+	@override String get uploadLogs => 'Subir registros';
 	@override String get error => 'Error:';
 	@override String get stackTrace => 'Traza de la pila (Stack Trace):';
 }
@@ -993,12 +995,12 @@ class _TranslationsShadersEs implements TranslationsShadersEn {
 	@override String get qualityFast => 'Rápido';
 	@override String get qualityHQ => 'Alta Calidad';
 	@override String get mode => 'Modo';
-	@override String get importShader => 'Import Shader';
-	@override String get customShaderDescription => 'Custom GLSL shader';
-	@override String get shaderImported => 'Shader imported';
-	@override String get shaderImportFailed => 'Failed to import shader';
-	@override String get deleteShader => 'Delete Shader';
-	@override String deleteShaderConfirm({required Object name}) => 'Delete "${name}"?';
+	@override String get importShader => 'Importar shader';
+	@override String get customShaderDescription => 'Shader GLSL personalizado';
+	@override String get shaderImported => 'Shader importado';
+	@override String get shaderImportFailed => 'Error al importar shader';
+	@override String get deleteShader => 'Eliminar shader';
+	@override String deleteShaderConfirm({required Object name}) => '¿Eliminar "${name}"?';
 }
 
 // Path: companionRemote
@@ -1008,7 +1010,7 @@ class _TranslationsCompanionRemoteEs implements TranslationsCompanionRemoteEn {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Companion Remote';
+	@override String get title => 'Control remoto';
 	@override String get connectToDevice => 'Conectar a dispositivo';
 	@override String get hostRemoteSession => 'Iniciar sesión remota';
 	@override String get controlThisDevice => 'Controla este dispositivo con tu teléfono';
@@ -1311,9 +1313,6 @@ extension on TranslationsEs {
 			'auth.signInWithPlex' => 'Inicia sesión con Plex',
 			'auth.showQRCode' => 'Mostrar código QR',
 			'auth.authenticate' => 'Autenticar',
-			'auth.debugEnterToken' => 'Debug: Ingresar Token de Plex',
-			'auth.plexTokenLabel' => 'Token de Autenticación de Plex',
-			'auth.plexTokenHint' => 'Ingresa tu token de Plex.tv',
 			'auth.authenticationTimeout' => 'Tiempo de autenticación agotado. Por favor, intenta de nuevo.',
 			'auth.scanQRToSignIn' => 'Escanea este código QR para iniciar sesión',
 			'auth.waitingForAuth' => 'Esperando autenticación...\nPor favor completa el inicio de sesión en tu navegador.',
@@ -1478,6 +1477,11 @@ extension on TranslationsEs {
 			'settings.autoSkipCreditsDescription' => 'Saltar automáticamente los créditos y reproducir el siguiente episodio',
 			'settings.autoSkipDelay' => 'Retraso de Salto automático',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Esperar ${seconds} segundos antes de saltar automáticamente',
+			'settings.introPattern' => 'Patrón de marcador de intro',
+			'settings.introPatternDescription' => 'Expresión regular para reconocer marcadores de intro en los títulos de capítulos',
+			'settings.creditsPattern' => 'Patrón de marcador de créditos',
+			'settings.creditsPatternDescription' => 'Expresión regular para reconocer marcadores de créditos en los títulos de capítulos',
+			'settings.invalidRegex' => 'Expresión regular no válida',
 			'settings.downloads' => 'Descargas',
 			'settings.downloadLocationDescription' => 'Elegir dónde almacenar el contenido descargado',
 			'settings.downloadLocationDefault' => 'Predeterminado (Almacenamiento de la App)',
@@ -1501,8 +1505,8 @@ extension on TranslationsEs {
 			'settings.autoPipDescription' => 'Activar automáticamente imagen en imagen al salir de la app durante la reproducción',
 			'settings.matchContentFrameRate' => 'Ajustar frecuencia de actualización',
 			'settings.matchContentFrameRateDescription' => 'Ajustar la frecuencia de actualización de la pantalla para que coincida con el video, reduciendo tirones y ahorrando batería',
-			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use hardware-accelerated video tunneling. Disable if you see a black screen with audio on HDR content',
+			'settings.tunneledPlayback' => 'Reproducción tunelizada',
+			'settings.tunneledPlaybackDescription' => 'Usar tunelización de video acelerada por hardware. Desactivar si ves una pantalla negra con audio en contenido HDR',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil al abrir la app',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar selección de perfil cada vez que se abre la aplicación',
 			'settings.confirmExitOnBack' => 'Confirmar antes de salir',
@@ -1645,8 +1649,8 @@ extension on TranslationsEs {
 			'videoControls.pipErrors.unknown' => ({required Object error}) => 'Ocurrió un error: ${error}',
 			'videoControls.chapters' => 'Capítulos',
 			'videoControls.noChaptersAvailable' => 'No hay capítulos disponibles',
-			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.queue' => 'Cola',
+			'videoControls.noQueueItems' => 'No hay elementos en la cola',
 			'userStatus.admin' => 'Administrador',
 			'userStatus.restricted' => 'Restringido',
 			'userStatus.protected' => 'Protegido',
@@ -1681,9 +1685,9 @@ extension on TranslationsEs {
 			'messages.failedToCreatePlayQueueNoItems' => 'Error al crear la cola de reproducción - no hay elementos',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Error al ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Cambiando a reproductor compatible...',
-			'messages.logsUploaded' => 'Logs uploaded',
-			'messages.logsUploadFailed' => 'Failed to upload logs',
-			'messages.logId' => 'Log ID',
+			'messages.logsUploaded' => 'Registros subidos',
+			'messages.logsUploadFailed' => 'Error al subir registros',
+			'messages.logId' => 'ID de registro',
 			'subtitlingStyling.stylingOptions' => 'Opciones de Estilo',
 			'subtitlingStyling.fontSize' => 'Tamaño de Fuente',
 			'subtitlingStyling.textColor' => 'Color de Texto',
@@ -1691,7 +1695,7 @@ extension on TranslationsEs {
 			'subtitlingStyling.borderColor' => 'Color de Borde',
 			'subtitlingStyling.backgroundOpacity' => 'Opacidad de Fondo',
 			'subtitlingStyling.backgroundColor' => 'Color de Fondo',
-			'subtitlingStyling.position' => 'Position',
+			'subtitlingStyling.position' => 'Posición',
 			'mpvConfig.title' => 'Configuración de mpv',
 			'mpvConfig.description' => 'Ajustes avanzados del reproductor de video',
 			'mpvConfig.presets' => 'Ajustes preestablecidos',
@@ -1796,7 +1800,7 @@ extension on TranslationsEs {
 			'hubDetail.noItemsFound' => 'No se encontraron elementos',
 			'logs.clearLogs' => 'Borrar Logs',
 			'logs.copyLogs' => 'Copiar Logs',
-			'logs.uploadLogs' => 'Upload Logs',
+			'logs.uploadLogs' => 'Subir registros',
 			'logs.error' => 'Error:',
 			'logs.stackTrace' => 'Traza de la pila (Stack Trace):',
 			'licenses.relatedPackages' => 'Paquetes relacionados',
@@ -1817,10 +1821,10 @@ extension on TranslationsEs {
 			'liveTv.noPrograms' => 'No hay datos de programación disponibles',
 			'liveTv.channelNumber' => ({required Object number}) => 'Canal ${number}',
 			'liveTv.live' => 'EN VIVO',
-			'liveTv.hd' => 'HD',
-			'liveTv.premiere' => 'NUEVO',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.hd' => 'HD',
+			'liveTv.premiere' => 'NUEVO',
 			'liveTv.reloadGuide' => 'Recargar guía',
 			'liveTv.allChannels' => 'Todos los canales',
 			'liveTv.now' => 'Ahora',
@@ -1953,13 +1957,13 @@ extension on TranslationsEs {
 			'shaders.qualityFast' => 'Rápido',
 			'shaders.qualityHQ' => 'Alta Calidad',
 			'shaders.mode' => 'Modo',
-			'shaders.importShader' => 'Import Shader',
-			'shaders.customShaderDescription' => 'Custom GLSL shader',
-			'shaders.shaderImported' => 'Shader imported',
-			'shaders.shaderImportFailed' => 'Failed to import shader',
-			'shaders.deleteShader' => 'Delete Shader',
-			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
-			'companionRemote.title' => 'Companion Remote',
+			'shaders.importShader' => 'Importar shader',
+			'shaders.customShaderDescription' => 'Shader GLSL personalizado',
+			'shaders.shaderImported' => 'Shader importado',
+			'shaders.shaderImportFailed' => 'Error al importar shader',
+			'shaders.deleteShader' => 'Eliminar shader',
+			'shaders.deleteShaderConfirm' => ({required Object name}) => '¿Eliminar "${name}"?',
+			'companionRemote.title' => 'Control remoto',
 			'companionRemote.connectToDevice' => 'Conectar a dispositivo',
 			'companionRemote.hostRemoteSession' => 'Iniciar sesión remota',
 			'companionRemote.controlThisDevice' => 'Controla este dispositivo con tu teléfono',

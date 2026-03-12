@@ -954,7 +954,7 @@ class PlexClient {
 
   /// Get chapters and markers from cached metadata or fetch if needed
   /// Uses same cache key as other metadata methods for consistency
-  Future<PlaybackExtras> getPlaybackExtras(String ratingKey) async {
+  Future<PlaybackExtras> getPlaybackExtras(String ratingKey, {String? introPattern, String? creditsPattern}) async {
     try {
       final data = await _fetchWithCacheFirst<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
@@ -964,7 +964,7 @@ class PlexClient {
         parseResponse: (response) => response.data as Map<String, dynamic>?,
       );
       final metadataJson = _getFirstMetadataJsonFromData(data);
-      return _parsePlaybackExtrasFromMetadataJson(metadataJson);
+      return _parsePlaybackExtrasFromMetadataJson(metadataJson, introPattern: introPattern, creditsPattern: creditsPattern);
     } catch (e) {
       appLogger.w('Failed to get playback extras', error: e);
       return PlaybackExtras(chapters: [], markers: []);
@@ -972,10 +972,12 @@ class PlexClient {
   }
 
   /// Parse PlaybackExtras from metadata JSON
-  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(Map<String, dynamic>? metadataJson) {
+  PlaybackExtras _parsePlaybackExtrasFromMetadataJson(Map<String, dynamic>? metadataJson, {String? introPattern, String? creditsPattern}) {
     return PlaybackExtras.withChapterFallback(
       chapters: _parseChapters(metadataJson),
       markers: _parseMarkers(metadataJson),
+      introPatternStr: introPattern,
+      creditsPatternStr: creditsPattern,
     );
   }
 
@@ -1222,6 +1224,19 @@ class PlexClient {
   Future<Map<String, dynamic>> getServerPreferences() async {
     final response = await _dio.get('/:/prefs');
     return response.data;
+  }
+
+  /// Get preferences for a library section.
+  ///
+  /// Returns a map of setting id --> value for all settings in the library.
+  Future<Map<String, dynamic>> getLibrarySectionPrefs(String sectionId) async {
+    final response = await _dio.get('/library/sections/$sectionId/prefs');
+    final container = _getMediaContainer(response);
+    if (container == null) return {};
+    final settings = container['Setting'];
+    if (settings == null) return {};
+    final list = settings is List ? settings : [settings];
+    return {for (final s in list) s['id'] as String: s['value']};
   }
 
   /// Get sessions (currently playing)
@@ -2339,6 +2354,13 @@ class PlexClient {
       final container = _getMediaContainer(response);
       if (container == null) return null;
 
+      final containerStatus = container['status'];
+      if (containerStatus != null && containerStatus != 0 && containerStatus != 200) {
+        final msg = container['message'] ?? 'Unknown error';
+        appLogger.w('Tune channel error: $msg (status: $containerStatus)');
+        throw Exception(msg);
+      }
+
       // Metadata is nested: MediaSubscription[0].MediaGrabOperation[0].Metadata
       Map<String, dynamic>? metadataJson;
       final subscriptions = container['MediaSubscription'] as List?;
@@ -2350,13 +2372,15 @@ class PlexClient {
           final nested = op['Metadata'];
           if (nested is Map<String, dynamic>) {
             metadataJson = nested;
+          } else if (nested is List && nested.isNotEmpty) {
+            metadataJson = nested.first as Map<String, dynamic>;
           }
         }
       }
       metadataJson ??= (container['Metadata'] as List?)?.firstOrNull as Map<String, dynamic>?;
 
       if (metadataJson == null) {
-        appLogger.w('Tune channel: no metadata in response');
+        appLogger.w('Tune channel failed: ${container['message'] ?? 'no metadata'} (status: ${container['status']}, keys: ${container.keys.toList()})');
         return null;
       }
 

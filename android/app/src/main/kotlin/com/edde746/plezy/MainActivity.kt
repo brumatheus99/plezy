@@ -27,9 +27,9 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
 
-    private val PIP_CHANNEL = "app.plezy/pip"
-    private val EXTERNAL_PLAYER_CHANNEL = "app.plezy/external_player"
-    private val THEME_CHANNEL = "app.plezy/theme"
+    private val PIP_CHANNEL = "com.plezy/pip"
+    private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
+    private val THEME_CHANNEL = "com.plezy/theme"
     private var watchNextPlugin: WatchNextPlugin? = null
 
     // Auto PiP state
@@ -265,11 +265,11 @@ class MainActivity : FlutterActivity() {
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean,newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        MethodChannel( flutterEngine!!.dartExecutor.binaryMessenger, PIP_CHANNEL ).invokeMethod( "onPipChanged" , isInPictureInPictureMode)
-
-        // Notify ExoPlayer plugin to resize video surface for PiP
-        flutterEngine?.plugins?.get(ExoPlayerPlugin::class.java)?.let { plugin ->
-            (plugin as? ExoPlayerPlugin)?.onPipModeChanged(isInPictureInPictureMode)
+        flutterEngine?.let { engine ->
+            MethodChannel(engine.dartExecutor.binaryMessenger, PIP_CHANNEL).invokeMethod("onPipChanged", isInPictureInPictureMode)
+            engine.plugins.get(ExoPlayerPlugin::class.java)?.let { plugin ->
+                (plugin as? ExoPlayerPlugin)?.onPipModeChanged(isInPictureInPictureMode)
+            }
         }
     }
 

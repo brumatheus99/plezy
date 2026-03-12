@@ -1,4 +1,4 @@
-import 'dart:async' show StreamSubscription, Timer;
+import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:io' show Platform;
 import 'dart:typed_data';
 
@@ -255,6 +255,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   StreamSubscription<bool>? _playingSubscription;
   // Completed subscription to show controls when video ends
   StreamSubscription<bool>? _completedSubscription;
+  // Position subscription for marker tracking
+  StreamSubscription<Duration>? _positionSubscription;
   // Auto-skip state
   bool _autoSkipIntro = false;
   bool _autoSkipCredits = false;
@@ -287,7 +289,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _focusNode = FocusNode();
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
-      (Duration pos) => widget.player.seek(pos),
+      (Duration pos) {
+        unawaited(_seekToPosition(pos, notifyCompletion: false));
+      },
       const Duration(milliseconds: 200),
       leading: true,
       trailing: true,
@@ -356,7 +360,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   void _listenToPosition() {
-    widget.player.streams.position.listen((position) {
+    _positionSubscription = widget.player.streams.position.listen((position) {
       if (_markers.isEmpty || !_markersLoaded) {
         return;
       }
@@ -436,15 +440,31 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
   }
 
-  void _skipMarker() {
-    if (_currentMarker != null) {
-      final endTime = _currentMarker!.endTime;
-      setState(() {
-        _currentMarker = null;
-      });
-      widget.player.seek(endTime);
-      widget.onSeekCompleted?.call(endTime);
+  Future<void> _skipMarker() async {
+    if (_currentMarker == null) return;
+
+    final marker = _currentMarker!;
+    final endTime = marker.endTime;
+    final duration = widget.player.state.duration;
+    final isAtEnd = duration > Duration.zero &&
+        (duration - endTime).inMilliseconds <= 1000;
+
+    if (marker.isCredits && isAtEnd) {
+      // Credits extend to end of video — don't seek (unreliable due to
+      // position stream throttling). Go to next episode or exit player.
+      if (widget.onNext != null) {
+        widget.onNext!.call();
+      } else {
+        widget.onBack?.call();
+      }
+    } else {
+      await _seekToPosition(endTime);
     }
+
+    if (!mounted) return;
+    setState(() {
+      _currentMarker = null;
+    });
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
   }
@@ -474,11 +494,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       if (timer.tick >= totalTicks) {
         timer.cancel();
-        try {
-          _performAutoSkip();
-        } catch (e) {
-          // Handle any errors during skip gracefully
-        }
+        _performAutoSkip();
       }
     });
   }
@@ -514,16 +530,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip() {
     if (_currentMarker == null) return;
-
-    final isCredits = _currentMarker!.isCredits;
-    final hasNextEpisode = widget.onNext != null;
-    final showNextEpisode = isCredits && hasNextEpisode;
-
-    if (showNextEpisode) {
-      widget.onNext?.call();
-    } else {
-      _skipMarker();
-    }
+    unawaited(_skipMarker());
   }
 
   /// Check if auto-skip should be active for the current marker
@@ -655,6 +662,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _seekThrottle.cancel();
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
+    _positionSubscription?.cancel();
     _focusNode.dispose();
     _skipMarkerFocusNode.dispose();
     // Restore original rate if long-press was active when disposed
@@ -663,9 +671,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
-    // Remove window listener
+    // Remove window listener and reset always-on-top if it was enabled
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.removeListener(this);
+      if (_isAlwaysOnTop) {
+        windowManager.setAlwaysOnTop(false);
+      }
     }
     if (Platform.isMacOS) {
       _pipService.isPipActive.removeListener(_onMacPipChanged);
@@ -928,7 +939,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final client = _getClientForMetadata();
       appLogger.d('_loadPlaybackExtras: got client with serverId=${client.serverId}');
 
-      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey);
+      final settings = await SettingsService.getInstance();
+      final introPattern = settings.getIntroPattern();
+      final creditsPattern = settings.getCreditsPattern();
+      final extras = await client.getPlaybackExtras(widget.metadata.ratingKey, introPattern: introPattern, creditsPattern: creditsPattern);
       appLogger.d('_loadPlaybackExtras: got ${extras.chapters.length} chapters');
 
       if (mounted) {
@@ -947,7 +961,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         final cacheKey = '/library/metadata/${widget.metadata.ratingKey}';
         final cached = await PlexApiCache.instance.get(serverId, cacheKey);
         if (cached != null) {
-          final extras = _parsePlaybackExtrasFromCache(cached);
+          final extras = await _parsePlaybackExtrasFromCache(cached);
           appLogger.d('_loadPlaybackExtras: loaded ${extras.chapters.length} chapters from cache');
           if (mounted) {
             setState(() {
@@ -965,7 +979,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Parse PlaybackExtras from cached API response (for offline playback)
-  PlaybackExtras _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) {
+  Future<PlaybackExtras> _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) async {
     final chapters = <PlexChapter>[];
     final markers = <PlexMarker>[];
 
@@ -1002,7 +1016,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       }
     }
 
-    return PlaybackExtras.withChapterFallback(chapters: chapters, markers: markers);
+    final settings = await SettingsService.getInstance();
+    return PlaybackExtras.withChapterFallback(
+      chapters: chapters,
+      markers: markers,
+      introPatternStr: settings.getIntroPattern(),
+      creditsPatternStr: settings.getCreditsPattern(),
+    );
   }
 
   TrackControlsState _buildTrackControlsState({
@@ -1070,36 +1090,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       chapters: _chapters,
       chaptersLoaded: _chaptersLoaded,
       trackControlsState: trackControlsState,
+      onSeekCompleted: widget.onSeekCompleted,
       hideChaptersAndQueue: hideChaptersAndQueue,
     );
   }
 
-  void _seekToPreviousChapter() => _seekToChapter(forward: false);
+  void _seekToPreviousChapter() => unawaited(_seekToChapter(forward: false));
 
-  void _seekToNextChapter() => _seekToChapter(forward: true);
+  void _seekToNextChapter() => unawaited(_seekToChapter(forward: true));
 
-  void _seekByTime({required bool forward}) {
+  Future<void> _seekByTime({required bool forward}) async {
     final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall);
-    final newPosition = seekWithClamping(widget.player, delta);
-    widget.onSeekCompleted?.call(newPosition);
+    await _seekByOffset(delta);
   }
 
-  void _seekToChapter({required bool forward}) {
+  Future<void> _seekToChapter({required bool forward}) async {
     if (_chapters.isEmpty) {
       // No chapters - seek by configured amount
       final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall);
-      final duration = widget.player.state.duration;
-      final unclamped = widget.player.state.position + delta;
-      Duration newPosition;
-      if (unclamped < Duration.zero) {
-        newPosition = Duration.zero;
-      } else if (unclamped > duration) {
-        newPosition = duration;
-      } else {
-        newPosition = unclamped;
-      }
-      seekWithClamping(widget.player, delta);
-      widget.onSeekCompleted?.call(newPosition);
+      await _seekByOffset(delta);
       return;
     }
 
@@ -1110,7 +1119,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       for (final chapter in _chapters) {
         final chapterStart = chapter.startTimeOffset ?? 0;
         if (chapterStart > currentPositionMs) {
-          _seekToPosition(Duration(milliseconds: chapterStart));
+          await _seekToPosition(Duration(milliseconds: chapterStart));
           return;
         }
       }
@@ -1120,18 +1129,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         final chapterStart = _chapters[i].startTimeOffset ?? 0;
         if (currentPositionMs > chapterStart + 3000) {
           // If more than 3 seconds into chapter, go to start of current chapter
-          _seekToPosition(Duration(milliseconds: chapterStart));
+          await _seekToPosition(Duration(milliseconds: chapterStart));
           return;
         }
       }
       // If at start of first chapter, go to beginning
-      _seekToPosition(Duration.zero);
+      await _seekToPosition(Duration.zero);
     }
   }
 
-  void _seekToPosition(Duration position) {
-    widget.player.seek(position);
-    widget.onSeekCompleted?.call(position);
+  Future<void> _seekToPosition(Duration position, {bool notifyCompletion = true}) async {
+    final clamped = clampSeekPosition(widget.player, position);
+    await widget.player.seek(clamped);
+    if (notifyCompletion && mounted) {
+      widget.onSeekCompleted?.call(clamped);
+    }
+  }
+
+  Future<void> _seekByOffset(Duration delta, {bool notifyCompletion = true}) async {
+    final target = widget.player.state.position + delta;
+    final clamped = clampSeekPosition(widget.player, target);
+    await widget.player.seek(clamped);
+    if (notifyCompletion && mounted) {
+      widget.onSeekCompleted?.call(clamped);
+    }
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
@@ -1140,8 +1161,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Finalizes the seek when user stops scrubbing the timeline
   void _finalizeSeek(Duration position) {
     _seekThrottle.cancel();
-    widget.player.seek(position);
-    widget.onSeekCompleted?.call(position);
+    unawaited(_seekToPosition(position));
   }
 
   /// Handle tap in skip zone for desktop mode
@@ -1179,10 +1199,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
         // Stacking skip - add to accumulated
-        _handleStackingSkip(isForward: isForward);
+        unawaited(_handleStackingSkip(isForward: isForward));
       } else {
         // First double-tap - initiate skip
-        _handleDoubleTapSkip(isForward: isForward);
+        unawaited(_handleDoubleTapSkip(isForward: isForward));
       }
     } else {
       // First tap - record timestamp and start timer for single-tap action
@@ -1199,7 +1219,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Handle stacking skip - add to accumulated skip when feedback is active
-  void _handleStackingSkip({required bool isForward}) {
+  Future<void> _handleStackingSkip({required bool isForward}) async {
     if (!widget.canControl) return;
 
     // Add to accumulated skip
@@ -1207,10 +1227,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Calculate and perform seek
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    final newPosition = seekWithClamping(widget.player, delta);
-
-    // Notify Watch Together
-    widget.onSeekCompleted?.call(newPosition);
+    await _seekByOffset(delta);
 
     // Refresh feedback (extends timer, updates display)
     _showSkipFeedback(isForward: isForward);
@@ -1220,32 +1237,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Handle double-tap skip forward or backward
-  void _handleDoubleTapSkip({required bool isForward}) {
+  Future<void> _handleDoubleTapSkip({required bool isForward}) async {
     // Ignore if user cannot control playback
     if (!widget.canControl) return;
 
     // Reset accumulated skip for new gesture
     _accumulatedSkipSeconds = _seekTimeSmall;
 
-    // Calculate the new position (clamped to valid range)
-    final currentPosition = widget.player.state.position;
-    final duration = widget.player.state.duration;
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    final unclamped = currentPosition + delta;
-    Duration newPosition;
-    if (unclamped < Duration.zero) {
-      newPosition = Duration.zero;
-    } else if (unclamped > duration) {
-      newPosition = duration;
-    } else {
-      newPosition = unclamped;
-    }
-
-    // Perform the seek
-    seekWithClamping(widget.player, delta);
-
-    // Notify Watch Together
-    widget.onSeekCompleted?.call(newPosition);
+    await _seekByOffset(delta);
 
     // Show visual feedback
     _showSkipFeedback(isForward: isForward);
@@ -1736,7 +1736,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
               if (widget.canControl) {
                 final isForward =
                     key == LogicalKeyboardKey.mediaFastForward || key == LogicalKeyboardKey.mediaSkipForward;
-                _seekToChapter(forward: isForward);
+                unawaited(_seekToChapter(forward: isForward));
               }
               _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
               return KeyEventResult.handled;
@@ -1746,7 +1746,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             // Uses same behavior as seek keys: chapter navigation or time-based seek
             if (event is KeyDownEvent && _isMediaTrackKey(key)) {
               if (widget.canControl) {
-                _seekToChapter(forward: key == LogicalKeyboardKey.mediaTrackNext);
+                unawaited(_seekToChapter(forward: key == LogicalKeyboardKey.mediaTrackNext));
               }
               _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
               return KeyEventResult.handled;
@@ -2080,8 +2080,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         seekTimeSmall: _seekTimeSmall,
         onSeekToPreviousChapter: _seekToPreviousChapter,
         onSeekToNextChapter: _seekToNextChapter,
-        onSeekBackward: () => _seekByTime(forward: false),
-        onSeekForward: () => _seekByTime(forward: true),
+        onSeekBackward: () => unawaited(_seekByTime(forward: false)),
+        onSeekForward: () => unawaited(_seekByTime(forward: true)),
         onSeek: _throttledSeek,
         onSeekEnd: _finalizeSeek,
         getReplayIcon: getReplayIcon,
@@ -2099,6 +2099,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
         onCancelAutoHide: () => _hideTimer?.cancel(),
         onStartAutoHide: _startHideTimer,
+        onSeekCompleted: widget.onSeekCompleted,
         onContentStripVisibilityChanged: (visible) {
           setState(() => _isContentStripVisible = visible);
           if (visible) {
@@ -2115,8 +2116,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final isCredits = _currentMarker!.isCredits;
     final hasNextEpisode = widget.onNext != null;
 
-    // Show "Next Episode" for credits when next episode is available
-    final bool showNextEpisode = isCredits && hasNextEpisode;
+    // Show "Next Episode" only when credits extend to end AND there's a next episode
+    final bool creditsAtEnd = isCredits &&
+        widget.player.state.duration > Duration.zero &&
+        (widget.player.state.duration - _currentMarker!.endTime).inMilliseconds <= 1000;
+    final bool showNextEpisode = creditsAtEnd && hasNextEpisode;
     String baseButtonText;
     if (showNextEpisode) {
       baseButtonText = 'Next Episode';
